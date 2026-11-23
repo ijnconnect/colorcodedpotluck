@@ -280,7 +280,7 @@
           <i class="fas fa-user-shield"></i>
         </div>
         <h2 class="font-display font-bold text-xl text-slate-900 mb-1">Organizer Admin Access</h2>
-        <p class="text-xs text-slate-500 mb-6">Enter PIN to configure Google Sheets sync URL or manage draws. (Default PIN: <strong class="text-purple-700">1234</strong>)</p>
+        <p class="text-xs text-slate-500 mb-6">Enter the organizer PIN set in Code.gs. The PIN is checked by Google Sheets before any changes are saved.</p>
 
         <form onsubmit="handlePinSubmit(event)" class="space-y-4">
           <input 
@@ -330,12 +330,12 @@
                 <i class="fas fa-table"></i>
               </div>
               <div>
-                <h3 class="font-display font-bold text-slate-900 text-base">Google Sheets Web App Sync URL</h3>
-                <p class="text-xs text-slate-500">Connects your GitHub Pages app directly to a free Google Sheet database.</p>
+                <h3 class="font-display font-bold text-slate-900 text-base">Shared Google Sheets Connection</h3>
+                <p class="text-xs text-slate-500">All participants use the URL configured inside GitHub index.html.</p>
               </div>
             </div>
             <button onclick="openAppsScriptGuide()" class="px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-bold transition-all border border-purple-200 flex items-center">
-              <i class="fas fa-code mr-1.5"></i> Get Apps Script Code
+              <i class="fas fa-code mr-1.5"></i> Setup Guide
             </button>
           </div>
 
@@ -349,10 +349,10 @@
                 class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-purple-500 focus:bg-white focus:outline-none"
               >
               <button onclick="saveScriptUrl()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-all shadow flex-shrink-0">
-                Save & Test Sync
+                Refresh Connection
               </button>
             </div>
-            <p class="text-[11px] text-slate-400">Tip: Once saved, this URL is saved in browser storage and will keep all devices continuously in sync!</p>
+            <p class="text-[11px] text-slate-400">The URL is set once in index.html, not saved in individual phone browsers. Edit GitHub to change it.</p>
           </div>
         </div>
 
@@ -463,115 +463,22 @@
     </div>
   </footer>
 
-  <!-- MODAL: APPS SCRIPT SETUP INSTRUCTIONS -->
-  <div id="appsScriptModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto">
-    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl space-y-4 border border-slate-100 text-left my-8">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg font-bold">
-            <i class="fas fa-file-code"></i>
-          </div>
-          <div>
-            <h3 class="font-display font-bold text-lg text-slate-900">1-Minute Google Sheets Setup</h3>
-            <p class="text-xs text-slate-500">Enable instant online syncing across all phones!</p>
-          </div>
-        </div>
-        <button onclick="closeAppsScriptGuide()" class="text-slate-400 hover:text-slate-600 p-2">
-          <i class="fas fa-times text-lg"></i>
-        </button>
+  <!-- MODAL: GOOGLE SHEETS SETUP GUIDE -->
+  <div id="appsScriptModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-display font-bold text-lg">Connect the shared Google Sheet</h3>
+        <button onclick="closeAppsScriptGuide()" class="text-slate-500"><i class="fas fa-times"></i></button>
       </div>
-
-      <div class="space-y-3 text-xs text-slate-600 leading-relaxed max-h-[60vh] overflow-y-auto pr-1">
-        <ol class="list-decimal list-inside space-y-2 font-medium">
-          <li>Create a new blank spreadsheet at <strong><a href="https://sheets.new" target="_blank" class="text-purple-600 underline">sheets.new</a></strong>.</li>
-          <li>In the top menu, click <strong>Extensions &gt; Apps Script</strong>.</li>
-          <li>Delete any code in the editor and paste the 25-line script below:</li>
-        </ol>
-
-        <div class="relative">
-          <pre id="codeSnippet" class="p-3 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-xl overflow-x-auto select-all">function doGet(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var p = e.parameter;
-  var action = p.action;
-
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["ID", "Name", "Drawn", "AssignedColour", "Timestamp"]);
-  }
-
-  if (action === "read") {
-    var data = sheet.getDataRange().getValues();
-    var rows = [];
-    for (var i = 1; i < data.length; i++) {
-      rows.push({
-        id: String(data[i][0]),
-        name: String(data[i][1]),
-        drawn: data[i][2] === true || String(data[i][2]).toLowerCase() === "true",
-        assignedColour: data[i][3] ? String(data[i][3]) : null,
-        timestamp: data[i][4] ? Number(data[i][4]) : null
-      });
-    }
-    return ContentService.createTextOutput(JSON.stringify({ status: "success", data: rows }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-
-  if (action === "draw") {
-    var data = sheet.getDataRange().getValues();
-    for (var k = 1; k < data.length; k++) {
-      if (String(data[k][0]) === p.id) {
-        sheet.getRange(k + 1, 3).setValue(true);
-        sheet.getRange(k + 1, 4).setValue(p.assignedColour);
-        sheet.getRange(k + 1, 5).setValue(p.timestamp);
-        break;
-      }
-    }
-    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-
-  if (action === "reset") {
-    var data = sheet.getDataRange().getValues();
-    for (var m = 1; m < data.length; m++) {
-      if (p.id === "all" || String(data[m][0]) === p.id) {
-        sheet.getRange(m + 1, 3).setValue(false);
-        sheet.getRange(m + 1, 4).setValue("");
-        sheet.getRange(m + 1, 5).setValue("");
-      }
-    }
-    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-
-  if (action === "saveAll") {
-    var payload = JSON.parse(p.data);
-    sheet.clearContents();
-    sheet.appendRow(["ID", "Name", "Drawn", "AssignedColour", "Timestamp"]);
-    for (var j = 0; j < payload.length; j++) {
-      var item = payload[j];
-      sheet.appendRow([item.id, item.name, item.drawn, item.assignedColour || "", item.timestamp || ""]);
-    }
-    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}</pre>
-          <button onclick="copyAppsScriptCode()" class="absolute top-2 right-2 px-3 py-1 bg-purple-600 text-white font-bold rounded-lg text-[10px] hover:bg-purple-700">
-            Copy Code
-          </button>
-        </div>
-
-        <ol start="4" class="list-decimal list-inside space-y-2 font-medium pt-2">
-          <li>Click <strong>Deploy &gt; New deployment</strong>.</li>
-          <li>Click the gear icon <i class="fas fa-cog"></i> next to "Select type" and choose <strong>Web app</strong>.</li>
-          <li>Set <strong>Execute as:</strong> <code class="bg-slate-100 px-1 rounded font-bold">Me</code> and <strong>Who has access:</strong> <code class="bg-slate-100 px-1 rounded font-bold">Anyone</code>.</li>
-          <li>Click <strong>Deploy</strong>, authorize access if prompted, and copy your <strong>Web App URL</strong>.</li>
-          <li>Paste that Web App URL into the Admin input box above!</li>
-        </ol>
-      </div>
-
-      <div class="pt-3 border-t border-slate-100 flex justify-end">
-        <button onclick="closeAppsScriptGuide()" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800">
-          Got It!
-        </button>
-      </div>
+      <ol class="list-decimal list-inside text-sm leading-7 text-slate-700 space-y-2">
+        <li>Open a blank Google Sheet, then Extensions &gt; Apps Script.</li>
+        <li>Paste the provided <strong>Code.gs</strong> file, save, and run <strong>setupOnce()</strong> one time.</li>
+        <li>Deploy as Web app: Execute as <strong>Me</strong>, access <strong>Anyone</strong>.</li>
+        <li>Copy the <strong>/exec</strong> URL, and paste it into the <strong>APPS_SCRIPT_URL</strong> setting near the top of GitHub <strong>index.html</strong>.</li>
+        <li>Commit the updated index.html. Everyone shares the same connection automatically.</li>
+      </ol>
+      <p class="mt-4 p-3 rounded-xl bg-amber-50 text-amber-900 text-xs">Do not paste index.html into Apps Script. Do not use the old Apps Script snippet from Gemini: it is incompatible with this page.</p>
+      <div class="text-right mt-4"><button onclick="closeAppsScriptGuide()" class="bg-slate-900 text-white px-5 py-2 rounded-xl">Close</button></div>
     </div>
   </div>
 
@@ -596,773 +503,440 @@
 
   <!-- MAIN APPLICATION LOGIC -->
   <script>
-    // 11 Core Colours x 4 Slots = 44 Total
+    // SET THIS ONCE. The URL is baked into GitHub Pages for ALL participants.
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwDh3iWSiRTY6uxo8CRf23_5JDNGmobeLUGJoMYH2z8fWQzQWIeFrdt89Fc25LPJXMRYA/exec';
     const CORE_COLOURS = [
-      { name: "Red", hex: "#EF4444", textDark: false, icon: "fa-apple-whole", maxSlots: 4, suggestions: "Strawberries, watermelon, red velvet cake, tomato pasta, sambal/spicy dishes." },
-      { name: "Orange", hex: "#F97316", textDark: false, icon: "fa-carrot", maxSlots: 4, suggestions: "Oranges, mandarins, carrots, Cheetos / Super Ring, pumpkin soup, Thai iced tea." },
-      { name: "Yellow", hex: "#EAB308", textDark: true, icon: "fa-lemon", maxSlots: 4, suggestions: "Pineapple, corn, lemon tarts, banana fritters (pisang goreng), egg tarts, mango." },
-      { name: "Green", hex: "#22C55E", textDark: false, icon: "fa-leaf", maxSlots: 4, suggestions: "Pandan kuih, green grapes, guacamole, cucumber sandwiches, matcha desserts, kiwi." },
-      { name: "Blue", hex: "#3B82F6", textDark: false, icon: "fa-glass-water", maxSlots: 4, suggestions: "Blueberries, butterfly pea (nasi kerabu / tea), blue macarons, blue jelly, Gatorade." },
-      { name: "Purple", hex: "#A855F7", textDark: false, icon: "fa-wine-bottle", maxSlots: 4, suggestions: "Purple grapes, yam / taro (keladi) cake, Ribena, purple sweet potato, ube treats." },
-      { name: "Pink", hex: "#EC4899", textDark: false, icon: "fa-candy-cane", maxSlots: 4, suggestions: "Bandung drink, pink donuts, strawberry Pocky, dragon fruit, pink cupcakes." },
-      { name: "Brown", hex: "#92400E", textDark: false, icon: "fa-cookie", maxSlots: 4, suggestions: "Chocolate brownies, fried chicken, Milo / iced coffee, dates, satay, pretzels." },
-      { name: "White / Cream", hex: "#F3F4F6", textDark: true, icon: "fa-egg", maxSlots: 4, suggestions: "Coconut jelly, lychee, bao buns, vanilla ice cream, popcorn, cream puffs, tofu." },
-      { name: "Black / Dark", hex: "#1F2937", textDark: false, icon: "fa-bowl-food", maxSlots: 4, suggestions: "Oreos, dark chocolate, black sesame desserts, grass jelly (cincau), blackberries." },
-      { name: "Gold / Beige", hex: "#D97706", textDark: false, icon: "fa-bread-slice", maxSlots: 4, suggestions: "Curry puffs, nuggets, fries, croissants, potato chips, spring rolls (popiah)." }
+      { name: 'Red', hex: '#EF4444', textDark: false, icon: 'fa-apple-whole', maxSlots: 4, suggestions: 'Strawberries, watermelon, red velvet cake, tomato pasta, sambal/spicy dishes.' },
+      { name: 'Orange', hex: '#F97316', textDark: false, icon: 'fa-carrot', maxSlots: 4, suggestions: 'Oranges, mandarins, carrots, Super Ring, pumpkin soup, Thai iced tea.' },
+      { name: 'Yellow', hex: '#EAB308', textDark: true, icon: 'fa-lemon', maxSlots: 4, suggestions: 'Pineapple, corn, lemon tarts, pisang goreng, egg tarts, mango.' },
+      { name: 'Green', hex: '#22C55E', textDark: false, icon: 'fa-leaf', maxSlots: 4, suggestions: 'Pandan kuih, grapes, salad, cucumber sandwiches, matcha desserts, kiwi.' },
+      { name: 'Blue', hex: '#3B82F6', textDark: false, icon: 'fa-glass-water', maxSlots: 4, suggestions: 'Blueberries, butterfly pea tea, nasi kerabu, blue macarons, blue jelly.' },
+      { name: 'Purple', hex: '#A855F7', textDark: false, icon: 'fa-wine-bottle', maxSlots: 4, suggestions: 'Purple grapes, taro cake, Ribena, purple sweet potato, ube treats.' },
+      { name: 'Pink', hex: '#EC4899', textDark: false, icon: 'fa-candy-cane', maxSlots: 4, suggestions: 'Bandung drink, pink donuts, strawberry Pocky, dragon fruit, pink cupcakes.' },
+      { name: 'Brown', hex: '#92400E', textDark: false, icon: 'fa-cookie', maxSlots: 4, suggestions: 'Chocolate brownies, fried chicken, Milo, iced coffee, dates, satay.' },
+      { name: 'White / Cream', hex: '#F3F4F6', textDark: true, icon: 'fa-egg', maxSlots: 4, suggestions: 'Coconut jelly, lychee, bao buns, popcorn, cream puffs, tofu.' },
+      { name: 'Black / Dark', hex: '#1F2937', textDark: false, icon: 'fa-bowl-food', maxSlots: 4, suggestions: 'Oreos, dark chocolate, black sesame desserts, cincau, blackberries.' },
+      { name: 'Gold / Beige', hex: '#D97706', textDark: false, icon: 'fa-bread-slice', maxSlots: 4, suggestions: 'Curry puffs, nuggets, fries, croissants, chips, popiah.' }
     ];
-
-    // Default 44 CorpComms All Stars Team Roster
     const DEFAULT_NAMES = [
-      "Danial", "Afif", "Aida", "Aifa", "Aisyah", "Amalina", "Amira", "Arifah",
-      "Asrawati", "Ayman", "Azlie", "Esther", "Faiza", "Farah", "Farahin", "Farisha",
-      "Fatiha", "Fazin", "Halijah", "Harith", "Ilham", "Izrinda", "Janelle", "Maam Aina",
-      "Mariam", "Nadia", "Nizam", "Osman", "Radha", "Raya", "Sabbir", "Satish",
-      "Shahril", "Shahriman", "Shahroni", "Sobri", "Sofea", "Syahmie", "Syazana", "Tarmizi",
-      "Thuraya", "Wan", "Wani", "Zeenat"
+      'Danial','Afif','Aida','Aifa','Aisyah','Amalina','Amira','Arifah',
+      'Asrawati','Ayman','Azlie','Esther','Faiza','Farah','Farahin','Farisha',
+      'Fatiha','Fazin','Halijah','Harith','Ilham','Izrinda','Janelle','Maam Aina',
+      'Mariam','Nadia','Nizam','Osman','Radha','Raya','Sabbir','Satish',
+      'Shahril','Shahriman','Shahroni','Sobri','Sofea','Syahmie','Syazana','Tarmizi',
+      'Thuraya','Wan','Wani','Zeenat'
     ];
 
-    // Global State
     let participants = [];
     let selectedParticipantId = null;
     let isAdminUnlocked = false;
-    let adminPin = "1234";
+    let enteredAdminPin = '';
     let isDrawingInProgress = false;
-    let scriptUrl = localStorage.getItem('potluck_script_url') || "";
-    let pollInterval = null;
+    let backendReady = false;
+    let requestSequence = 0;
+    let modalConfirmCallback = null;
 
-    window.addEventListener('load', () => {
-      initPoolGrid();
-      populateAdminColourFilter();
-      initParticipantsLocal();
-
-      if (scriptUrl) {
-        document.getElementById('scriptUrlInput').value = scriptUrl;
-        updateSyncStatus(true, "Connected to Google Sheet");
-        fetchFromGoogleSheet();
-      } else {
-        updateSyncStatus(false, "Local Mode (Add Google Apps Script URL in Admin)");
-      }
-
-      // Start automatic polling every 5 seconds
-      pollInterval = setInterval(() => {
-        if (scriptUrl && !isDrawingInProgress) {
-          fetchFromGoogleSheet(true);
-        }
-      }, 5000);
-    });
-
-    function initParticipantsLocal() {
-      const stored = localStorage.getItem('potluck_participants_44');
-      if (stored) {
-        try {
-          participants = JSON.parse(stored);
-        } catch(e) { createDefaultParticipants(); }
-      } else {
-        createDefaultParticipants();
-      }
-      onParticipantsUpdated();
+    const $ = id => document.getElementById(id);
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const configured = () => APPS_SCRIPT_URL.startsWith('https://script.google.com/macros/s/') && APPS_SCRIPT_URL.endsWith('/exec');
+    function escapeHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
-    function createDefaultParticipants() {
-      participants = DEFAULT_NAMES.map((name, index) => ({
-        id: `p_${index + 1}`,
-        name: name,
-        drawn: false,
-        assignedColour: null,
-        timestamp: null
-      }));
-      saveLocal();
-    }
-
-    function saveLocal() {
-      localStorage.setItem('potluck_participants_44', JSON.stringify(participants));
-      onParticipantsUpdated();
-    }
-
-    function updateSyncStatus(connected, text) {
-      const statusText = document.getElementById('syncStatusText');
-      const pingDot = document.getElementById('pingDot');
-      const staticDot = document.getElementById('staticDot');
-
-      statusText.innerText = text;
-      if (connected) {
-        pingDot.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
-        staticDot.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500";
-      } else {
-        pingDot.className = "hidden";
-        staticDot.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500";
-      }
-    }
-
-    // --- GOOGLE APPS SCRIPT SYNC FUNCTIONS ---
-    async function fetchFromGoogleSheet(isSilent = false) {
-      if (!scriptUrl) return;
-      try {
-        const res = await fetch(`${scriptUrl}?action=read&t=${Date.now()}`);
-        const result = await res.json();
-        if (result && result.status === "success" && Array.isArray(result.data) && result.data.length > 0) {
-          // Merge data preserving local roster order
-          const cloudMap = {};
-          result.data.forEach(item => cloudMap[item.id] = item);
-
-          participants = participants.map(p => {
-            const cloudItem = cloudMap[p.id];
-            if (cloudItem) {
-              return {
-                ...p,
-                drawn: cloudItem.drawn,
-                assignedColour: cloudItem.assignedColour,
-                timestamp: cloudItem.timestamp
-              };
-            }
-            return p;
-          });
-
-          saveLocal();
-          updateSyncStatus(true, "Live Google Sheet Synced");
-          if (!isSilent) showToast("Synced latest draws from Google Sheet!", "success");
-        } else if (result.data && result.data.length === 0) {
-          // Sheet is empty, populate it automatically!
-          uploadRosterToGoogleSheet();
-        }
-      } catch (err) {
-        console.warn("Google Sheet sync fetch warning:", err);
-        updateSyncStatus(false, "Syncing fallback (check URL)");
-      }
-    }
-
-    async function uploadRosterToGoogleSheet() {
-      if (!scriptUrl) return;
-      try {
-        const payload = encodeURIComponent(JSON.stringify(participants));
-        await fetch(`${scriptUrl}?action=saveAll&data=${payload}&t=${Date.now()}`);
-      } catch (e) {
-        console.error("Error uploading roster:", e);
-      }
-    }
-
-    async function sendDrawToGoogleSheet(pId, colour, timestamp) {
-      if (!scriptUrl) return;
-      try {
-        const url = `${scriptUrl}?action=draw&id=${encodeURIComponent(pId)}&assignedColour=${encodeURIComponent(colour)}&timestamp=${timestamp}&t=${Date.now()}`;
-        await fetch(url);
-      } catch (e) {
-        console.error("Error sending draw to Google Sheet:", e);
-      }
-    }
-
-    async function sendResetToGoogleSheet(pId) {
-      if (!scriptUrl) return;
-      try {
-        const url = `${scriptUrl}?action=reset&id=${encodeURIComponent(pId)}&t=${Date.now()}`;
-        await fetch(url);
-      } catch (e) {
-        console.error("Error sending reset to Google Sheet:", e);
-      }
-    }
-
-    window.saveScriptUrl = function() {
-      const val = document.getElementById('scriptUrlInput').value.trim();
-      if (!val || !val.startsWith("https://script.google.com")) {
-        showToast("Please enter a valid Google Apps Script URL starting with https://script.google.com", "error");
-        return;
-      }
-      scriptUrl = val;
-      localStorage.setItem('potluck_script_url', scriptUrl);
-      showToast("Google Apps Script URL saved!", "success");
-      updateSyncStatus(true, "Connecting to Google Sheet...");
-      fetchFromGoogleSheet();
-    };
-
-    // --- REACTION WHEN DATA CHANGES ---
-    function onParticipantsUpdated() {
-      updateDrawnCounter();
-      renderPoolGridStats();
-
-      if (selectedParticipantId) {
-        const currentP = participants.find(p => p.id === selectedParticipantId);
-        if (currentP) renderParticipantState(currentP);
-      }
-
-      if (isAdminUnlocked) renderAdminTable();
-
-      const bulkInput = document.getElementById('bulkNamesInput');
-      if (document.activeElement !== bulkInput) {
-        bulkInput.value = participants.map(p => p.name).join('\n');
-        document.getElementById('parsedNameCount').innerText = participants.length;
-      }
-    }
-
-    function updateDrawnCounter() {
-      const drawnCount = participants.filter(p => p.drawn).length;
-      document.getElementById('drawnCounter').innerText = `${drawnCount}/${participants.length}`;
-    }
-
-    // --- POOL GRID RENDER ---
-    function initPoolGrid() {
-      const grid = document.getElementById('poolGrid');
-      grid.innerHTML = '';
-      CORE_COLOURS.forEach(c => {
-        const card = document.createElement('div');
-        card.id = `poolCard_${c.name.replace(/[^a-zA-Z]/g, '')}`;
-        card.className = "p-3 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col justify-between transition-all";
-        card.innerHTML = `
-          <div class="flex items-center space-x-2 mb-2">
-            <div class="w-4 h-4 rounded-full flex-shrink-0 shadow-sm" style="background-color: ${c.hex}; border: 1px solid rgba(0,0,0,0.1);"></div>
-            <span class="text-xs font-bold text-slate-800 truncate">${c.name}</span>
-          </div>
-          <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500">
-            <span>Taken: <strong class="text-slate-900TakenCount">0</strong>/${c.maxSlots}</span>
-            <span class="statusBadge font-bold text-emerald-600">Available</span>
-          </div>
-        `;
-        grid.appendChild(card);
+    // JSONP read: avoids common cross-origin Google Apps Script fetch() failures.
+    function readRemote() {
+      if (!configured()) return Promise.reject(new Error('Apps Script URL not configured in index.html.'));
+      return new Promise((resolve, reject) => {
+        const callback = '__potluckRead' + (++requestSequence);
+        const tag = document.createElement('script');
+        let finished = false;
+        const cleanup = () => {
+          if (finished) return false;
+          finished = true;
+          clearTimeout(timer);
+          tag.remove();
+          try { delete window[callback]; } catch (e) { window[callback] = undefined; }
+          return true;
+        };
+        const timer = setTimeout(() => {
+          if (cleanup()) reject(new Error('Google Sheets connection timed out.'));
+        }, 12000);
+        window[callback] = data => {
+          if (cleanup()) {
+            if (data && data.status === 'success' && Array.isArray(data.data)) resolve(data.data);
+            else reject(new Error((data && data.message) || 'Google Sheets returned an error.'));
+          }
+        };
+        tag.onerror = () => { if (cleanup()) reject(new Error('Could not load Google Apps Script. Check deployment access.')); };
+        tag.src = APPS_SCRIPT_URL + '?action=read&callback=' + callback + '&t=' + Date.now();
+        document.head.appendChild(tag);
       });
+    }
+
+    // Write using text/plain and no-cors; success is VERIFIED by reading back.
+    async function writeRemote(data) {
+      if (!configured()) throw new Error('The Apps Script URL is not configured.');
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(data), cache: 'no-store'
+      });
+    }
+
+    function updateSyncStatus(connected, message) {
+      $('syncStatusText').textContent = message;
+      $('pingDot').className = connected ? 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75' : 'hidden';
+      $('staticDot').className = 'relative inline-flex rounded-full h-2.5 w-2.5 ' + (connected ? 'bg-emerald-500' : 'bg-amber-500');
+    }
+
+    async function fetchFromGoogleSheet(silent = false) {
+      if (!configured()) {
+        backendReady = false;
+        updateSyncStatus(false, 'Setup needed: add the Google Apps Script URL in index.html');
+        return false;
+      }
+      try {
+        const rows = await readRemote();
+        if (rows.length !== 44) throw new Error('The Draws sheet must contain 44 names. Run setupOnce().');
+        participants = rows.map(p => ({
+          id: String(p.id), name: String(p.name), drawn: Boolean(p.drawn),
+          assignedColour: p.assignedColour || null,
+          timestamp: p.timestamp ? Number(p.timestamp) : null
+        }));
+        backendReady = true;
+        updateSyncStatus(true, 'Live Google Sheet Synced');
+        onParticipantsUpdated();
+        if (!silent) showToast('Connected to the shared Google Sheet!', 'success');
+        return true;
+      } catch (err) {
+        backendReady = false;
+        updateSyncStatus(false, 'Not connected - check Apps Script deployment');
+        console.error('Potluck sync:', err);
+        if (!silent) showToast(err.message, 'error');
+        return false;
+      }
+    }
+
+    // Called only after a write, since no-cors responses cannot be inspected.
+    async function waitForRemote(predicate, attempts = 14) {
+      for (let i = 0; i < attempts; i++) {
+        await sleep(650 + i * 100);
+        const ok = await fetchFromGoogleSheet(true);
+        if (ok && predicate(participants)) return true;
+      }
+      return false;
+    }
+
+    function onParticipantsUpdated() {
+      $('drawnCounter').textContent = participants.filter(p => p.drawn).length + '/' + participants.length;
+      renderPoolGridStats();
+      if (selectedParticipantId && !isDrawingInProgress) {
+        const p = participants.find(p => p.id === selectedParticipantId);
+        if (p) renderParticipantState(p);
+      }
+      if (isAdminUnlocked) renderAdminTable();
+      const edit = $('bulkNamesInput');
+      if (document.activeElement !== edit) {
+        edit.value = participants.map(p => p.name).join('\n');
+        $('parsedNameCount').textContent = participants.length;
+      }
+    }
+
+    function initPoolGrid() {
+      $('poolGrid').innerHTML = CORE_COLOURS.map(c => `
+        <div id="poolCard_${c.name.replace(/[^a-zA-Z]/g,'')}" class="p-3 rounded-2xl border border-slate-200 bg-slate-50">
+          <div class="flex items-center space-x-2 mb-2">
+            <div class="w-4 h-4 rounded-full flex-shrink-0 border border-black/10" style="background:${c.hex}"></div>
+            <span class="text-xs font-bold text-slate-800 truncate">${escapeHtml(c.name)}</span>
+          </div>
+          <div class="flex justify-between text-[11px] font-semibold text-slate-500">
+            <span>Taken: <strong class="takenCount">0</strong>/${c.maxSlots}</span>
+            <span class="statusBadge text-emerald-600">4 Left</span>
+          </div>
+        </div>`).join('');
     }
 
     function renderPoolGridStats() {
-      const counts = {};
-      CORE_COLOURS.forEach(c => counts[c.name] = 0);
-      participants.forEach(p => {
-        if (p.drawn && p.assignedColour && counts.hasOwnProperty(p.assignedColour)) {
-          counts[p.assignedColour]++;
-        }
-      });
-
       CORE_COLOURS.forEach(c => {
-        const cardId = `poolCard_${c.name.replace(/[^a-zA-Z]/g, '')}`;
-        const card = document.getElementById(cardId);
+        const count = participants.filter(p => p.drawn && p.assignedColour === c.name).length;
+        const card = $('poolCard_' + c.name.replace(/[^a-zA-Z]/g,''));
         if (!card) return;
-
-        const taken = counts[c.name] || 0;
-        const remaining = c.maxSlots - taken;
-
-        const takenSpan = card.querySelector('.text-slate-900TakenCount');
-        if (takenSpan) takenSpan.innerText = taken;
-
+        card.querySelector('.takenCount').textContent = count;
         const badge = card.querySelector('.statusBadge');
-        if (badge) {
-          if (remaining === 0) {
-            badge.innerText = "FULL";
-            badge.className = "statusBadge font-bold text-rose-500";
-          } else {
-            badge.innerText = `${remaining} Left`;
-            badge.className = "statusBadge font-bold text-emerald-600";
-          }
-        }
+        badge.textContent = count >= c.maxSlots ? 'FULL' : (c.maxSlots - count) + ' Left';
+        badge.className = 'statusBadge font-bold ' + (count >= c.maxSlots ? 'text-rose-500' : 'text-emerald-600');
       });
     }
 
-    // --- PARTICIPANT SEARCH & SELECT ---
-    window.filterNames = function() {
-      const query = document.getElementById('nameSearchInput').value.toLowerCase().trim();
-      const dropdown = document.getElementById('nameDropdown');
-      const clearBtn = document.getElementById('clearNameBtn');
-
-      if (query.length > 0) clearBtn.classList.remove('hidden');
-      else clearBtn.classList.add('hidden');
-
-      const filtered = participants.filter(p => p.name.toLowerCase().includes(query));
-      
-      if (filtered.length === 0) {
-        dropdown.innerHTML = `<div class="p-4 text-xs text-slate-400 text-center">No matching name found</div>`;
-      } else {
-        dropdown.innerHTML = filtered.map(p => `
-          <button 
-            type="button"
-            onclick="selectParticipant('${p.id}')"
-            class="w-full px-4 py-3 text-left hover:bg-purple-50 flex items-center justify-between transition-colors text-xs font-semibold"
-          >
-            <span class="text-slate-900">${escapeHtml(p.name)}</span>
-            ${p.drawn 
-              ? `<span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full text-[10px]">Drawn: ${p.assignedColour}</span>`
-              : `<span class="text-emerald-600 font-bold text-[10px]"><i class="fas fa-circle text-[8px] mr-1"></i> Ready to Draw</span>`
-            }
-          </button>
-        `).join('');
-      }
-      dropdown.classList.remove('hidden');
-    };
-
-    window.showNameDropdown = function() { filterNames(); };
-
-    window.selectParticipant = function(id) {
-      const p = participants.find(item => item.id === id);
+    function filterNames() {
+      const term = $('nameSearchInput').value.trim().toLowerCase();
+      $('clearNameBtn').classList.toggle('hidden', !term);
+      const list = participants.filter(p => p.name.toLowerCase().includes(term));
+      $('nameDropdown').innerHTML = list.length ? list.map(p => `
+        <button type="button" onclick="selectParticipant('${p.id}')" class="w-full px-4 py-3 text-left hover:bg-purple-50 flex justify-between items-center text-xs font-semibold">
+          <span>${escapeHtml(p.name)}</span>
+          <span class="${p.drawn ? 'text-purple-700' : 'text-emerald-600'}">${p.drawn ? 'Drawn: ' + escapeHtml(p.assignedColour || '') : 'Ready to Draw'}</span>
+        </button>`).join('') : '<div class="p-4 text-xs text-slate-400 text-center">No matching name found</div>';
+      $('nameDropdown').classList.remove('hidden');
+    }
+    function showNameDropdown() { filterNames(); }
+    function selectParticipant(id) {
+      if (isDrawingInProgress) return;
+      const p = participants.find(x => x.id === id);
       if (!p) return;
-
       selectedParticipantId = id;
-      document.getElementById('nameSearchInput').value = p.name;
-      document.getElementById('nameDropdown').classList.add('hidden');
-      document.getElementById('clearNameBtn').classList.remove('hidden');
-
+      $('nameSearchInput').value = p.name;
+      $('nameDropdown').classList.add('hidden');
+      $('clearNameBtn').classList.remove('hidden');
       renderParticipantState(p);
-    };
-
-    window.clearNameSelection = function() {
+      // Refresh on selection, not just on a timer.
+      fetchFromGoogleSheet(true);
+    }
+    function clearNameSelection() {
+      if (isDrawingInProgress) return;
       selectedParticipantId = null;
-      document.getElementById('nameSearchInput').value = '';
-      document.getElementById('nameDropdown').classList.add('hidden');
-      document.getElementById('clearNameBtn').classList.add('hidden');
-
-      document.getElementById('stateSelectPrompt').classList.remove('hidden');
-      document.getElementById('stateReadyToRoll').classList.add('hidden');
-      document.getElementById('stateRolling').classList.add('hidden');
-      document.getElementById('stateResult').classList.add('hidden');
-    };
-
+      $('nameSearchInput').value = '';
+      $('nameDropdown').classList.add('hidden');
+      $('clearNameBtn').classList.add('hidden');
+      ['stateReadyToRoll','stateRolling','stateResult'].forEach(id => $(id).classList.add('hidden'));
+      $('stateSelectPrompt').classList.remove('hidden');
+    }
     function renderParticipantState(p) {
-      document.getElementById('stateSelectPrompt').classList.add('hidden');
-      document.getElementById('stateRolling').classList.add('hidden');
-
+      $('stateSelectPrompt').classList.add('hidden');
+      $('stateRolling').classList.add('hidden');
       if (p.drawn && p.assignedColour) {
-        document.getElementById('stateReadyToRoll').classList.add('hidden');
-        document.getElementById('stateResult').classList.remove('hidden');
-
-        const colourObj = CORE_COLOURS.find(c => c.name === p.assignedColour) || {
-          name: p.assignedColour, hex: "#6B7280", icon: "fa-utensils", suggestions: "Bring any dish matching this shade!"
-        };
-
-        document.getElementById('resultBadgeText').innerText = `Locked in for ${p.name}`;
-        document.getElementById('resultColourTitle').innerText = colourObj.name.toUpperCase();
-        
-        const resultBox = document.getElementById('resultColourBox');
-        resultBox.style.backgroundColor = colourObj.hex;
-        resultBox.className = `w-full h-36 rounded-2xl flex flex-col items-center justify-center p-4 transition-all shadow-inner ${colourObj.textDark ? 'text-slate-900' : 'text-white'}`;
-        
-        document.getElementById('resultIcon').className = `fas ${colourObj.icon || 'fa-utensils'} text-4xl mb-2 drop-shadow-md`;
-        document.getElementById('resultHexTag').innerText = colourObj.hex;
-        document.getElementById('resultSuggestions').innerText = colourObj.suggestions;
-
+        $('stateReadyToRoll').classList.add('hidden');
+        $('stateResult').classList.remove('hidden');
+        const c = CORE_COLOURS.find(c => c.name === p.assignedColour) || { name: p.assignedColour, hex: '#64748b', suggestions: '', icon: 'fa-utensils' };
+        $('resultBadgeText').textContent = 'Locked in for ' + p.name;
+        $('resultColourTitle').textContent = c.name.toUpperCase();
+        $('resultColourBox').style.backgroundColor = c.hex;
+        $('resultColourBox').className = 'w-full h-36 rounded-2xl flex flex-col items-center justify-center p-4 shadow-inner ' + (c.textDark ? 'text-slate-900' : 'text-white');
+        $('resultIcon').className = 'fas ' + c.icon + ' text-4xl mb-2';
+        $('resultHexTag').textContent = c.hex;
+        $('resultSuggestions').textContent = c.suggestions;
       } else {
-        document.getElementById('stateResult').classList.add('hidden');
-        document.getElementById('stateReadyToRoll').classList.remove('hidden');
-        document.getElementById('selectedUserHeader').innerText = `Hello, ${p.name}!`;
+        $('stateResult').classList.add('hidden');
+        $('stateReadyToRoll').classList.remove('hidden');
+        $('selectedUserHeader').textContent = 'Hello, ' + p.name + '!';
+        $('rollBtn').disabled = !backendReady;
       }
     }
 
-    // --- DRAW EXECUTION LOGIC ---
-    window.executeDraw = async function() {
+    async function executeDraw() {
       if (!selectedParticipantId || isDrawingInProgress) return;
-
-      const p = participants.find(item => item.id === selectedParticipantId);
-      if (!p) return;
-
-      if (p.drawn) {
-        showToast(`${p.name} has already drawn a colour!`, "info");
+      if (!backendReady || !(await fetchFromGoogleSheet(true))) {
+        showToast('Not connected. Please check the shared Google Sheet first.', 'error');
         return;
       }
-
-      // Calculate available colours (< 4 slots)
-      const counts = {};
-      CORE_COLOURS.forEach(c => counts[c.name] = 0);
-      participants.forEach(item => {
-        if (item.drawn && item.assignedColour && counts.hasOwnProperty(item.assignedColour)) {
-          counts[item.assignedColour]++;
-        }
-      });
-
-      const availableColours = CORE_COLOURS.filter(c => counts[c.name] < c.maxSlots);
-
-      if (availableColours.length === 0) {
-        showToast("All 44 colour slots have already been claimed!", "error");
+      const participant = participants.find(p => p.id === selectedParticipantId);
+      if (!participant) return;
+      if (participant.drawn) {
+        renderParticipantState(participant);
+        showToast('This name has already drawn a colour.', 'info');
         return;
       }
-
       isDrawingInProgress = true;
-      document.getElementById('stateReadyToRoll').classList.add('hidden');
-      document.getElementById('stateRolling').classList.remove('hidden');
-
-      const rollingDisplay = document.getElementById('rollingDisplay');
-      
-      let shuffleInterval = setInterval(() => {
-        const tempColour = availableColours[Math.floor(Math.random() * availableColours.length)];
-        rollingDisplay.style.backgroundColor = tempColour.hex;
-        rollingDisplay.className = `w-40 h-40 rounded-full mx-auto flex flex-col items-center justify-center font-display font-extrabold text-xl shadow-2xl transition-all ${tempColour.textDark ? 'text-slate-900' : 'text-white'}`;
-        rollingDisplay.innerHTML = `
-          <i class="fas ${tempColour.icon} text-3xl mb-1 animate-spin"></i>
-          <span>${tempColour.name}</span>
-        `;
-      }, 100);
-
-      setTimeout(async () => {
-        clearInterval(shuffleInterval);
-
-        const pickedColour = availableColours[Math.floor(Math.random() * availableColours.length)];
-        const timestamp = Date.now();
-
-        // Optimistic UI update
-        p.drawn = true;
-        p.assignedColour = pickedColour.name;
-        p.timestamp = timestamp;
-        saveLocal();
-
-        // Send background update to Google Sheet
-        await sendDrawToGoogleSheet(p.id, pickedColour.name, timestamp);
-
-        isDrawingInProgress = false;
-
-        if (typeof confetti === 'function') {
-          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-        }
-
-        showToast(`Successfully drawn: ${pickedColour.name}!`, "success");
-
-      }, 2500);
-    };
-
-    // --- SHARE HELPER ---
-    window.copyParticipantShareText = function() {
-      if (!selectedParticipantId) return;
-      const p = participants.find(item => item.id === selectedParticipantId);
-      if (!p || !p.assignedColour) return;
-
-      const colourObj = CORE_COLOURS.find(c => c.name === p.assignedColour);
-      const text = `🎨 CorpComms Potluck 2026 🍱\n\nName: ${p.name}\nAssigned Colour: ${p.assignedColour}\nDish Ideas: ${colourObj ? colourObj.suggestions : ''}\n\nSee you at the party! 🎉`;
-
-      copyToClipboard(text, "Colour details copied to clipboard!");
-    };
-
-    // --- ADMIN PANEL & TABS ---
-    window.switchTab = function(tab) {
-      const drawBtn = document.getElementById('navDrawBtn');
-      const adminBtn = document.getElementById('navAdminBtn');
-      const drawView = document.getElementById('participantView');
-      const adminView = document.getElementById('adminView');
-
-      if (tab === 'draw') {
-        drawBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-purple-700 shadow-sm";
-        adminBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900";
-        drawView.classList.remove('hidden');
-        adminView.classList.add('hidden');
-      } else {
-        adminBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-purple-700 shadow-sm";
-        drawBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900";
-        adminView.classList.remove('hidden');
-        drawView.classList.add('hidden');
-      }
-    };
-
-    window.handlePinSubmit = function(e) {
-      e.preventDefault();
-      const pin = document.getElementById('adminPinInput').value;
-      if (pin === adminPin) {
-        isAdminUnlocked = true;
-        document.getElementById('adminPinCard').classList.add('hidden');
-        document.getElementById('adminPanelContent').classList.remove('hidden');
-        renderAdminTable();
-        showToast("Organizer Admin Unlocked!", "success");
-      } else {
-        showToast("Incorrect PIN. Please use '1234'.", "error");
-      }
-    };
-
-    window.lockAdmin = function() {
-      isAdminUnlocked = false;
-      document.getElementById('adminPinInput').value = '';
-      document.getElementById('adminPinCard').classList.remove('hidden');
-      document.getElementById('adminPanelContent').classList.add('hidden');
-      showToast("Admin Panel Locked", "info");
-    };
-
-    function populateAdminColourFilter() {
-      const select = document.getElementById('adminColourFilter');
-      CORE_COLOURS.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.name;
-        opt.innerText = c.name;
-        select.appendChild(opt);
-      });
-    }
-
-    window.renderAdminTable = function() {
-      if (!isAdminUnlocked) return;
-
-      const search = document.getElementById('adminSearchInput').value.toLowerCase();
-      const statusFilter = document.getElementById('adminStatusFilter').value;
-      const colourFilter = document.getElementById('adminColourFilter').value;
-
-      let filtered = participants.filter(p => {
-        const matchSearch = p.name.toLowerCase().includes(search);
-        const matchStatus = statusFilter === 'all' 
-          ? true 
-          : (statusFilter === 'drawn' ? p.drawn : !p.drawn);
-        const matchColour = colourFilter === 'all'
-          ? true
-          : (p.assignedColour === colourFilter);
-        return matchSearch && matchStatus && matchColour;
-      });
-
-      const tbody = document.getElementById('adminTableBody');
-      document.getElementById('tableRowSummary').innerText = `Showing ${filtered.length} of ${participants.length} participants`;
-
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400">No participants match filters</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = filtered.map((p, idx) => {
-        const colourObj = CORE_COLOURS.find(c => c.name === p.assignedColour);
-        const timeStr = p.timestamp ? new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
-
-        return `
-          <tr class="hover:bg-slate-50 transition-colors">
-            <td class="py-3 px-4 font-mono text-slate-400">${idx + 1}</td>
-            <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(p.name)}</td>
-            <td class="py-3 px-4">
-              ${p.drawn 
-                ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800"><i class="fas fa-check-circle mr-1"></i> Drawn</span>`
-                : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800"><i class="fas fa-clock mr-1"></i> Pending</span>`
-              }
-            </td>
-            <td class="py-3 px-4">
-              ${p.assignedColour && colourObj 
-                ? `<div class="flex items-center space-x-2">
-                    <span class="w-3.5 h-3.5 rounded-full inline-block border border-black/10 shadow-sm" style="background-color: ${colourObj.hex};"></span>
-                    <span class="font-bold text-slate-800">${p.assignedColour}</span>
-                   </div>`
-                : `<span class="text-slate-400">-</span>`
-              }
-            </td>
-            <td class="py-3 px-4 text-slate-500 font-mono text-[11px]">${timeStr}</td>
-            <td class="py-3 px-4 text-right space-x-1">
-              ${p.drawn 
-                ? `<button onclick="confirmResetParticipant('${p.id}')" title="Reset this participant's draw" class="px-2.5 py-1 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold">
-                    <i class="fas fa-undo"></i> Reset
-                   </button>`
-                : `<span class="text-slate-300 text-[10px]">No action</span>`
-              }
-            </td>
-          </tr>
-        `;
-      }).join('');
-    };
-
-    // --- ROSTER MANAGEMENT ---
-    window.toggleRosterEditor = function() {
-      const body = document.getElementById('rosterEditorBody');
-      const text = document.getElementById('rosterToggleText');
-      if (body.classList.contains('hidden')) {
-        body.classList.remove('hidden');
-        text.innerText = "Hide Editor";
-      } else {
-        body.classList.add('hidden');
-        text.innerText = "Show Editor";
-      }
-    };
-
-    window.loadDefaultRoster = function() {
-      document.getElementById('bulkNamesInput').value = DEFAULT_NAMES.join('\n');
-      document.getElementById('parsedNameCount').innerText = 44;
-    };
-
-    window.saveRosterFromBulk = async function() {
-      const raw = document.getElementById('bulkNamesInput').value;
-      const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-
-      if (lines.length === 0) {
-        showToast("Please enter at least 1 participant name.", "error");
-        return;
-      }
-
-      openModal({
-        title: "Update Roster?",
-        body: `This will set the roster to ${lines.length} participants. Existing draws will be updated.`,
-        icon: "fa-users",
-        confirmText: "Update Roster",
-        onConfirm: async () => {
-          participants = lines.map((name, i) => {
-            const docId = `p_${i + 1}`;
-            const existing = participants.find(p => p.id === docId);
-            return {
-              id: docId,
-              name: name,
-              drawn: existing ? existing.drawn : false,
-              assignedColour: existing ? existing.assignedColour : null,
-              timestamp: existing ? existing.timestamp : null
-            };
-          });
-          saveLocal();
-          await uploadRosterToGoogleSheet();
-          showToast("Roster updated successfully!", "success");
-        }
-      });
-    };
-
-    // --- RESET ACTIONS ---
-    window.confirmResetParticipant = function(id) {
-      const p = participants.find(item => item.id === id);
-      if (!p) return;
-
-      openModal({
-        title: `Reset ${p.name}?`,
-        body: `This will reset ${p.name}'s draw (${p.assignedColour}) so they can re-roll.`,
-        icon: "fa-undo",
-        confirmText: "Reset Draw",
-        onConfirm: async () => {
-          p.drawn = false;
-          p.assignedColour = null;
-          p.timestamp = null;
-          saveLocal();
-          await sendResetToGoogleSheet(p.id);
-          showToast(`Reset draw for ${p.name}.`, "success");
-        }
-      });
-    };
-
-    window.confirmResetAll = function() {
-      openModal({
-        title: "Reset ALL 44 Draws?",
-        body: "WARNING: This will clear all assigned potluck colours for all participants. Participant names will be kept.",
-        icon: "fa-exclamation-triangle",
-        confirmText: "Reset All",
-        onConfirm: async () => {
-          participants.forEach(p => {
-            p.drawn = false;
-            p.assignedColour = null;
-            p.timestamp = null;
-          });
-          saveLocal();
-          await sendResetToGoogleSheet("all");
-          showToast("All draws have been reset!", "success");
-        }
-      });
-    };
-
-    // --- EXPORTS SUMMARY ---
-    window.copyWhatsAppSummary = function() {
-      let text = `🎨 *CORPCOMMS POTLUCK COLOUR SUMMARY* 🍱\n\n`;
-      
-      CORE_COLOURS.forEach(c => {
-        const assigned = participants.filter(p => p.drawn && p.assignedColour === c.name);
-        text += `*${c.name.toUpperCase()}* (${assigned.length}/${c.maxSlots}):\n`;
-        if (assigned.length === 0) {
-          text += `  _No participants yet_\n`;
-        } else {
-          assigned.forEach(p => {
-            text += `  • ${p.name}\n`;
-          });
-        }
-        text += `  💡 _Ideas: ${c.suggestions}_\n\n`;
-      });
-
-      const pending = participants.filter(p => !p.drawn);
-      if (pending.length > 0) {
-        text += `⏳ *Pending Draws (${pending.length}):*\n`;
-        text += pending.map(p => p.name).join(', ') + `\n\n`;
-      }
-
-      text += `Draw online here: https://ijnconnect.github.io/colorcodedpotluck/ 🎉`;
-
-      copyToClipboard(text, "WhatsApp summary copied to clipboard!");
-    };
-
-    window.exportCSV = function() {
-      let csv = "ID,Name,Status,Assigned Colour,Timestamp\n";
-      participants.forEach(p => {
-        const timeStr = p.timestamp ? new Date(p.timestamp).toISOString() : "";
-        csv += `"${p.id}","${p.name}","${p.drawn ? 'Drawn' : 'Pending'}","${p.assignedColour || ''}","${timeStr}"\n`;
-      });
-
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `potluck_colour_draws_${new Date().toISOString().slice(0,10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      showToast("Downloaded CSV summary!", "success");
-    };
-
-    // --- MODALS & UTILS ---
-    window.openAppsScriptGuide = function() {
-      document.getElementById('appsScriptModal').classList.remove('hidden');
-    };
-
-    window.closeAppsScriptGuide = function() {
-      document.getElementById('appsScriptModal').classList.add('hidden');
-    };
-
-    window.copyAppsScriptCode = function() {
-      const code = document.getElementById('codeSnippet').innerText;
-      copyToClipboard(code, "Apps Script code copied to clipboard!");
-    };
-
-    window.togglePoolDetails = function() {
-      const grid = document.getElementById('poolGrid');
-      const text = document.getElementById('poolToggleText');
-      if (grid.classList.contains('hidden')) {
-        grid.classList.remove('hidden');
-        text.innerText = "Hide Details";
-      } else {
-        grid.classList.add('hidden');
-        text.innerText = "Show Details";
-      }
-    };
-
-    function showToast(msg, type = "info") {
-      const toast = document.getElementById('toast');
-      const icon = document.getElementById('toastIcon');
-      const message = document.getElementById('toastMessage');
-
-      message.innerText = msg;
-      if (type === "success") {
-        icon.className = "w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0";
-        icon.innerHTML = `<i class="fas fa-check font-bold"></i>`;
-      } else if (type === "error") {
-        icon.className = "w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center flex-shrink-0";
-        icon.innerHTML = `<i class="fas fa-exclamation font-bold"></i>`;
-      } else {
-        icon.className = "w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center flex-shrink-0";
-        icon.innerHTML = `<i class="fas fa-info font-bold"></i>`;
-      }
-
-      toast.classList.remove('translate-y-[-150%]');
-      setTimeout(() => { hideToast(); }, 3500);
-    }
-
-    window.hideToast = function() {
-      document.getElementById('toast').classList.add('translate-y-[-150%]');
-    };
-
-    function copyToClipboard(text, toastMsg) {
-      const tempArea = document.createElement("textarea");
-      tempArea.value = text;
-      document.body.appendChild(tempArea);
-      tempArea.select();
+      $('rollBtn').disabled = true;
+      $('stateReadyToRoll').classList.add('hidden');
+      $('stateRolling').classList.remove('hidden');
+      const display = $('rollingDisplay');
+      const ticker = setInterval(() => {
+        const c = CORE_COLOURS[Math.floor(Math.random() * CORE_COLOURS.length)];
+        display.style.backgroundColor = c.hex;
+        display.className = 'w-40 h-40 rounded-full mx-auto flex flex-col items-center justify-center font-display font-extrabold text-xl shadow-2xl ' + (c.textDark ? 'text-slate-900' : 'text-white');
+        display.innerHTML = '<i class="fas ' + c.icon + ' text-3xl mb-1 animate-spin"></i><span>' + escapeHtml(c.name) + '</span>';
+      }, 110);
+      let succeeded = false;
       try {
-        document.execCommand('copy');
-        showToast(toastMsg, "success");
+        // Server draws from its own pool and enforces the 4-per-colour limit.
+        await writeRemote({ action: 'draw', id: participant.id });
+        await sleep(1800);
+        succeeded = await waitForRemote(list => !!list.find(p => p.id === participant.id && p.drawn), 12);
       } catch (err) {
-        showToast("Failed to copy text.", "error");
+        console.error('Draw request failed:', err);
+      } finally {
+        clearInterval(ticker);
+        isDrawingInProgress = false;
+        onParticipantsUpdated();
       }
-      document.body.removeChild(tempArea);
+      if (succeeded) {
+        if (typeof confetti === 'function') confetti({ particleCount: 110, spread: 70, origin: {y:0.6} });
+        const latest = participants.find(p => p.id === participant.id);
+        showToast('Saved successfully: ' + latest.assignedColour + '!', 'success');
+      } else {
+        showToast('Could not confirm the draw in Google Sheets. Do not roll again yet; refresh and check your name.', 'error');
+      }
     }
 
-    let modalConfirmCallback = null;
-    function openModal({ title, body, icon, confirmText, onConfirm }) {
-      document.getElementById('modalTitle').innerText = title;
-      document.getElementById('modalBody').innerText = body;
-      document.getElementById('modalConfirmBtn').innerText = confirmText || "Confirm";
-      document.getElementById('modalIconContainer').innerHTML = `<i class="fas ${icon || 'fa-question-circle'}"></i>`;
-      
+    function copyParticipantShareText() {
+      const p = participants.find(p => p.id === selectedParticipantId);
+      if (!p || !p.assignedColour) return;
+      const c = CORE_COLOURS.find(c => c.name === p.assignedColour);
+      copyToClipboard('CorpComms Potluck 2026\nName: ' + p.name + '\nAssigned colour: ' + p.assignedColour + '\nIdeas: ' + (c ? c.suggestions : '') + '\nhttps://ijnconnect.github.io/colorcodedpotluck/', 'Colour details copied!');
+    }
+
+    function switchTab(tab) {
+      const draw = tab === 'draw';
+      $('participantView').classList.toggle('hidden', !draw);
+      $('adminView').classList.toggle('hidden', draw);
+      $('navDrawBtn').className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ' + (draw ? 'bg-white text-purple-700 shadow-sm' : 'text-slate-600 hover:text-slate-900');
+      $('navAdminBtn').className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ' + (!draw ? 'bg-white text-purple-700 shadow-sm' : 'text-slate-600 hover:text-slate-900');
+      if (!draw) fetchFromGoogleSheet(true);
+    }
+    function handlePinSubmit(e) {
+      e.preventDefault();
+      const typed = $('adminPinInput').value.trim();
+      if (typed.length < 4) { showToast('Enter your organizer PIN from Code.gs.', 'error'); return; }
+      enteredAdminPin = typed;
+      isAdminUnlocked = true;
+      $('adminPinCard').classList.add('hidden');
+      $('adminPanelContent').classList.remove('hidden');
+      renderAdminTable();
+      showToast('Dashboard opened. PIN will be checked by Google Sheets for changes.', 'info');
+    }
+    function lockAdmin() {
+      enteredAdminPin = '';
+      isAdminUnlocked = false;
+      $('adminPinInput').value = '';
+      $('adminPinCard').classList.remove('hidden');
+      $('adminPanelContent').classList.add('hidden');
+    }
+    function populateAdminColourFilter() {
+      $('adminColourFilter').innerHTML = '<option value="all">All Colours</option>' + CORE_COLOURS.map(c => '<option value="' + escapeHtml(c.name) + '">' + escapeHtml(c.name) + '</option>').join('');
+    }
+    function renderAdminTable() {
+      if (!isAdminUnlocked) return;
+      const text = $('adminSearchInput').value.toLowerCase();
+      const status = $('adminStatusFilter').value;
+      const colour = $('adminColourFilter').value;
+      const filtered = participants.filter(p => p.name.toLowerCase().includes(text) && (status === 'all' || (status === 'drawn' ? p.drawn : !p.drawn)) && (colour === 'all' || p.assignedColour === colour));
+      $('tableRowSummary').textContent = 'Showing ' + filtered.length + ' of ' + participants.length + ' participants';
+      $('adminTableBody').innerHTML = filtered.length ? filtered.map((p, i) => {
+        const c = CORE_COLOURS.find(c => c.name === p.assignedColour);
+        return `<tr class="hover:bg-slate-50">
+          <td class="py-3 px-4 text-slate-400">${i + 1}</td>
+          <td class="py-3 px-4 font-bold">${escapeHtml(p.name)}</td>
+          <td class="py-3 px-4">${p.drawn ? '<span class="text-emerald-700 font-bold">Drawn</span>' : '<span class="text-amber-600">Pending</span>'}</td>
+          <td class="py-3 px-4">${c ? `<span class="inline-block w-3 h-3 rounded-full mr-1 align-middle" style="background:${c.hex}"></span> ${escapeHtml(c.name)}` : '-'}</td>
+          <td class="py-3 px-4">${p.timestamp ? new Date(p.timestamp).toLocaleString('en-MY', {dateStyle:'short',timeStyle:'short'}) : '-'}</td>
+          <td class="py-3 px-4 text-right">${p.drawn ? `<button class="text-rose-600 font-bold hover:underline" onclick="confirmResetParticipant('${p.id}')">Reset</button>` : '-'}</td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="6" class="p-6 text-center text-slate-500">No matching participants</td></tr>';
+    }
+    function toggleRosterEditor() {
+      $('rosterEditorBody').classList.toggle('hidden');
+      $('rosterToggleText').textContent = $('rosterEditorBody').classList.contains('hidden') ? 'Show Editor' : 'Hide Editor';
+    }
+    function loadDefaultRoster() {
+      $('bulkNamesInput').value = DEFAULT_NAMES.join('\n');
+      $('parsedNameCount').textContent = 44;
+    }
+    function saveRosterFromBulk() {
+      const names = $('bulkNamesInput').value.split('\n').map(s => s.trim()).filter(Boolean);
+      if (names.length !== 44 || new Set(names.map(s => s.toLowerCase())).size !== 44) {
+        showToast('Roster must contain exactly 44 unique names.', 'error'); return;
+      }
+      openModal({title:'Update the 44 names?', body:'Changes will be saved to the shared Google Sheet. Existing draws are preserved by name.', icon:'fa-users', confirmText:'Update Roster', onConfirm:async () => {
+        try {
+          await writeRemote({action:'saveRoster', names:names, pin:enteredAdminPin});
+          const success = await waitForRemote(rows => rows.length === 44 && rows.every((p,i) => p.name === names[i]));
+          showToast(success ? 'Shared roster updated!' : 'Change not confirmed. Check your organizer PIN and Sheet.', success ? 'success' : 'error');
+        } catch (e) { showToast(e.message,'error'); }
+      }});
+    }
+    function confirmResetParticipant(id) {
+      const p = participants.find(p => p.id === id);
+      if (!p) return;
+      openModal({title:'Reset ' + p.name + '?', body:'This will let this person draw again. The freed slot returns to the pool.', icon:'fa-undo', confirmText:'Reset Draw', onConfirm:async () => {
+        try {
+          await writeRemote({action:'reset', id:id, pin:enteredAdminPin});
+          const success = await waitForRemote(rows => !!rows.find(x => x.id === id && !x.drawn));
+          showToast(success ? 'Draw reset for ' + p.name : 'Reset not confirmed. Check your organizer PIN.', success ? 'success' : 'error');
+        } catch(e) { showToast(e.message,'error'); }
+      }});
+    }
+    function confirmResetAll() {
+      openModal({title:'Reset ALL 44 draws?', body:'All assigned colours will be erased, while the 44 participant names remain.', icon:'fa-exclamation-triangle', confirmText:'Reset All', onConfirm:async () => {
+        try {
+          await writeRemote({action:'reset', id:'all', pin:enteredAdminPin});
+          const success = await waitForRemote(rows => rows.every(p => !p.drawn));
+          showToast(success ? 'All draws reset.' : 'Reset not confirmed. Check organizer PIN.', success ? 'success' : 'error');
+        } catch(e) { showToast(e.message,'error'); }
+      }});
+    }
+    function copyWhatsAppSummary() {
+      let result = 'CORPCOMMS POTLUCK COLOUR SUMMARY\n\n';
+      CORE_COLOURS.forEach(c => {
+        const names = participants.filter(p => p.drawn && p.assignedColour === c.name).map(p => p.name);
+        result += '*' + c.name.toUpperCase() + '* (' + names.length + '/4): ' + (names.join(', ') || 'None yet') + '\n';
+      });
+      result += '\nPending: ' + participants.filter(p => !p.drawn).map(p => p.name).join(', ') + '\n\nhttps://ijnconnect.github.io/colorcodedpotluck/';
+      copyToClipboard(result, 'WhatsApp summary copied!');
+    }
+    function exportCSV() {
+      const value = x => '"' + String(x == null ? '' : x).replace(/"/g,'""') + '"';
+      const lines = [['ID','Name','Status','Assigned Colour','Timestamp'], ...participants.map(p => [p.id,p.name,p.drawn ? 'Drawn' : 'Pending',p.assignedColour || '',p.timestamp ? new Date(p.timestamp).toISOString() : ''])];
+      const csv = lines.map(row => row.map(value).join(',')).join('\r\n');
+      const url = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+      const link = document.createElement('a'); link.href = url; link.download = 'potluck_draw_results.csv'; link.click();
+      setTimeout(() => URL.revokeObjectURL(url),500);
+      showToast('CSV downloaded.', 'success');
+    }
+
+    function saveScriptUrl() { fetchFromGoogleSheet(false); }
+    function showSetupHelp() { $('appsScriptModal').classList.remove('hidden'); }
+    function openAppsScriptGuide() { showSetupHelp(); }
+    function closeAppsScriptGuide() { $('appsScriptModal').classList.add('hidden'); }
+    function togglePoolDetails() {
+      $('poolGrid').classList.toggle('hidden');
+      $('poolToggleText').textContent = $('poolGrid').classList.contains('hidden') ? 'Show Details' : 'Hide Details';
+    }
+    function showToast(message,type='info') {
+      $('toastMessage').textContent = message;
+      $('toastIcon').className = 'w-8 h-8 rounded-full text-white flex items-center justify-center flex-shrink-0 ' + (type === 'success' ? 'bg-emerald-500' : type === 'error' ? 'bg-rose-500' : 'bg-purple-500');
+      $('toastIcon').innerHTML = '<i class="fas ' + (type === 'error' ? 'fa-exclamation' : type === 'success' ? 'fa-check' : 'fa-info') + '"></i>';
+      $('toast').classList.remove('translate-y-[-150%]');
+      setTimeout(hideToast,3500);
+    }
+    function hideToast() { $('toast').classList.add('translate-y-[-150%]'); }
+    async function copyToClipboard(text,message) {
+      try { await navigator.clipboard.writeText(text); showToast(message,'success'); }
+      catch(e) { showToast('Copy failed. Please use CSV export instead.','error'); }
+    }
+    function openModal({title,body,icon,confirmText,onConfirm}) {
+      $('modalTitle').textContent = title;
+      $('modalBody').textContent = body;
+      $('modalConfirmBtn').textContent = confirmText || 'Confirm';
+      $('modalIconContainer').innerHTML = '<i class="fas ' + (icon || 'fa-question-circle') + '"></i>';
       modalConfirmCallback = onConfirm;
-      document.getElementById('customModal').classList.remove('hidden');
+      $('customModal').classList.remove('hidden');
     }
+    function closeModal() { $('customModal').classList.add('hidden'); modalConfirmCallback = null; }
+    $('modalConfirmBtn').addEventListener('click',() => { const action = modalConfirmCallback; closeModal(); if (action) action(); });
 
-    window.closeModal = function() {
-      document.getElementById('customModal').classList.add('hidden');
-      modalConfirmCallback = null;
-    };
-
-    document.getElementById('modalConfirmBtn').addEventListener('click', () => {
-      if (modalConfirmCallback) modalConfirmCallback();
-      closeModal();
+    window.addEventListener('load', async () => {
+      initPoolGrid();
+      populateAdminColourFilter();
+      participants = DEFAULT_NAMES.map((name, i) => ({ id:'p_' + (i+1),name, drawn:false,assignedColour:null,timestamp:null }));
+      onParticipantsUpdated();
+      $('scriptUrlInput').value = configured() ? APPS_SCRIPT_URL : 'URL not configured in index.html';
+      $('scriptUrlInput').readOnly = true;
+      updateSyncStatus(false, configured() ? 'Connecting to Google Sheet...' : 'Setup needed: Apps Script URL missing');
+      await fetchFromGoogleSheet(true);
+      setInterval(() => {
+        if (!document.hidden && !isDrawingInProgress) fetchFromGoogleSheet(true);
+      }, 15000);
+      document.addEventListener('visibilitychange',() => {
+        if (!document.hidden && !isDrawingInProgress) fetchFromGoogleSheet(true);
+      });
+      document.addEventListener('click',e => {
+        if (!e.target.closest('#nameSearchInput') && !e.target.closest('#nameDropdown')) $('nameDropdown').classList.add('hidden');
+      });
+      $('bulkNamesInput').addEventListener('input',() => {
+        $('parsedNameCount').textContent = $('bulkNamesInput').value.split('\n').filter(line => line.trim()).length;
+      });
     });
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
   </script>
 </body>
 </html>
