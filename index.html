@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Colour-Coded Potluck Draw</title>
+  <title>CorpComms All Stars 2026 — Colour-Coded Potluck Draw</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Canvas Confetti -->
@@ -26,14 +26,12 @@
           animation: {
             'bounce-slow': 'bounce 2s infinite',
             'pulse-fast': 'pulse 1s infinite',
-            'spin-wheels': 'spin 0.6s linear infinite',
           }
         }
       }
     }
   </script>
   <style>
-    /* Custom styling & wheel animations */
     .rainbow-border {
       background: linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #a855f7, #ec4899);
       background-size: 200% 200%;
@@ -44,10 +42,6 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-    .wheel-rotate {
-      transition: transform 4s cubic-bezier(0.15, 0.99, 0.24, 1.00);
-    }
-    /* Custom Scrollbars */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -93,7 +87,7 @@
           <h1 class="font-display font-extrabold text-lg sm:text-xl text-slate-900 leading-tight">
             CorpComms All Stars 2026 — Colour-Coded Potluck! 🎉
           </h1>
-          <p class="text-xs text-slate-500 font-medium">Pick your name, draw a colour, bring matching food!</p>
+          <p class="text-xs text-slate-500 font-medium">Pick your name, roll a colour, bring matching food!</p>
         </div>
       </div>
 
@@ -103,7 +97,7 @@
           <i class="fas fa-dice text-purple-500 mr-1.5"></i> Draw Colour
         </button>
         <button id="navAdminBtn" onclick="switchTab('admin')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900">
-          <i class="fas fa-user-shield mr-1.5"></i> Organizer Admin
+          <i class="fas fa-user-shield mr-1.5"></i> Admin Setup
         </button>
       </div>
     </div>
@@ -116,10 +110,10 @@
     <div id="syncBadge" class="mb-6 bg-purple-50 border border-purple-200 rounded-xl p-3 flex items-center justify-between text-xs text-purple-900 shadow-sm">
       <div class="flex items-center space-x-2">
         <span class="relative flex h-2.5 w-2.5">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          <span id="pingDot" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span id="staticDot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
         </span>
-        <span class="font-semibold" id="syncStatusText">Syncing online via cloud...</span>
+        <span class="font-semibold" id="syncStatusText">Syncing online via Google Sheet...</span>
       </div>
       <div class="flex items-center space-x-3">
         <span class="bg-white px-2.5 py-1 rounded-lg border border-purple-100 font-bold text-purple-700">
@@ -135,7 +129,7 @@
       <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md transition-shadow">
         <label class="block text-sm font-bold text-slate-800 mb-2 flex items-center justify-between">
           <span><i class="fas fa-user text-purple-600 mr-2"></i>Step 1: Select Your Name</span>
-          <span class="text-xs font-normal text-slate-400">44 Participants Total</span>
+          <span class="text-xs font-normal text-slate-400">44 Team Members</span>
         </label>
         
         <div class="relative">
@@ -169,8 +163,8 @@
           <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto text-purple-600 text-3xl animate-bounce-slow">
             <i class="fas fa-hand-pointer"></i>
           </div>
-          <h2 class="font-display font-extrabold text-xl text-slate-900">Search & Select Your Name Above</h2>
-          <p class="text-sm text-slate-500 max-w-md mx-auto">Select your name to draw a potluck food colour slot or view your previously assigned colour.</p>
+          <h2 class="font-display font-extrabold text-xl text-slate-900">Select Your Name Above to Begin</h2>
+          <p class="text-sm text-slate-500 max-w-md mx-auto">Choose your name from the search box to roll your random food colour or view your assigned colour.</p>
         </div>
 
         <!-- READY TO ROLL STATE -->
@@ -180,11 +174,11 @@
           </div>
           
           <div>
-            <h2 class="font-display font-black text-2xl sm:text-3xl text-slate-900" id="selectedUserHeader">Hello, Participant!</h2>
-            <p class="text-sm text-slate-500 mt-1">Click the button below to randomly draw your potluck colour.</p>
+            <h2 class="font-display font-black text-2xl sm:text-3xl text-slate-900" id="selectedUserHeader">Hello!</h2>
+            <p class="text-sm text-slate-500 mt-1">Click the button below to randomly assign your potluck colour!</p>
           </div>
 
-          <!-- Spinning Wheel / Slot Graphic Container -->
+          <!-- Spinner Graphic Container -->
           <div class="relative max-w-xs mx-auto my-6">
             <div id="spinnerVisual" class="w-48 h-48 rounded-full border-8 border-slate-900 shadow-2xl mx-auto relative overflow-hidden flex items-center justify-center rainbow-border p-2">
               <div class="w-full h-full bg-slate-900 rounded-full flex flex-col items-center justify-center text-white p-4 text-center">
@@ -202,7 +196,7 @@
             <i class="fas fa-dice-five mr-2 text-amber-300"></i> Roll My Colour!
           </button>
 
-          <p class="text-xs text-slate-400 italic">Each colour is randomly assigned & automatically locked once drawn.</p>
+          <p class="text-xs text-slate-400 italic">Colours are randomly selected and locked to your name across all devices.</p>
         </div>
 
         <!-- ANIMATING DRAW STATE -->
@@ -211,10 +205,10 @@
             <i class="fas fa-sync-alt fa-spin text-3xl mb-2"></i>
             <span>Picking...</span>
           </div>
-          <h3 class="font-display font-bold text-xl text-slate-800 animate-pulse">Assigning your secret potluck colour...</h3>
+          <h3 class="font-display font-bold text-xl text-slate-800 animate-pulse">Assigning your potluck colour...</h3>
         </div>
 
-        <!-- RESULT DISPLAY STATE (NEWLY DRAWN OR REVISITING) -->
+        <!-- RESULT DISPLAY STATE -->
         <div id="stateResult" class="hidden space-y-6 py-4">
           <div id="resultBadge" class="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
             <i class="fas fa-lock"></i>
@@ -222,7 +216,7 @@
           </div>
 
           <div>
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Your Potluck Colour Is</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Your Assigned Colour Is</span>
             <h2 id="resultColourTitle" class="font-display font-black text-3xl sm:text-4xl text-slate-900 mt-1">
               RED
             </h2>
@@ -263,8 +257,8 @@
       <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="font-display font-bold text-base text-slate-900">Colour Slots Overview</h3>
-            <p class="text-xs text-slate-500">11 Colours × 4 Slots = 44 Total Participants</p>
+            <h3 class="font-display font-bold text-base text-slate-900">Colour Slots Breakdown</h3>
+            <p class="text-xs text-slate-500">11 Colours × 4 Slots = 44 Total Slots</p>
           </div>
           <button onclick="togglePoolDetails()" class="text-xs font-bold text-purple-600 hover:text-purple-800">
             <span id="poolToggleText">Hide Details</span>
@@ -286,7 +280,7 @@
           <i class="fas fa-user-shield"></i>
         </div>
         <h2 class="font-display font-bold text-xl text-slate-900 mb-1">Organizer Admin Access</h2>
-        <p class="text-xs text-slate-500 mb-6">Enter PIN to manage participants, setup names, or export results. (Default PIN: <strong class="text-purple-700">1234</strong>)</p>
+        <p class="text-xs text-slate-500 mb-6">Enter PIN to configure Google Sheets sync URL or manage draws. (Default PIN: <strong class="text-purple-700">1234</strong>)</p>
 
         <form onsubmit="handlePinSubmit(event)" class="space-y-4">
           <input 
@@ -312,15 +306,15 @@
               <span class="bg-emerald-500 text-slate-900 text-xs font-black px-2.5 py-0.5 rounded-full uppercase">Unlocked</span>
               <h2 class="font-display font-bold text-xl">Organizer Control Center</h2>
             </div>
-            <p class="text-xs text-slate-400 mt-1">Manage participants, track color assignments, and export summary.</p>
+            <p class="text-xs text-slate-400 mt-1">Manage sync endpoint, track color assignments, and export WhatsApp summary.</p>
           </div>
 
           <div class="flex flex-wrap gap-2 w-full md:w-auto">
             <button onclick="copyWhatsAppSummary()" class="flex-1 md:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center transition-all shadow">
-              <i class="fab fa-whatsapp text-sm mr-2"></i> Copy WhatsApp Summary
+              <i class="fab fa-whatsapp text-sm mr-2"></i> WhatsApp Summary
             </button>
             <button onclick="exportCSV()" class="flex-1 md:flex-none px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center transition-all border border-slate-700">
-              <i class="fas fa-file-csv text-sm mr-2"></i> Download CSV
+              <i class="fas fa-file-csv text-sm mr-2"></i> CSV Export
             </button>
             <button onclick="lockAdmin()" class="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl text-xs font-bold border border-slate-700">
               <i class="fas fa-lock"></i>
@@ -328,12 +322,46 @@
           </div>
         </div>
 
-        <!-- Setup & Roster Editor Accordion -->
+        <!-- GOOGLE SHEETS APPS SCRIPT SYNC CONFIGURATION -->
+        <div class="bg-white rounded-3xl border border-purple-200 p-6 shadow-sm">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center space-x-3 mb-4">
+              <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg font-bold">
+                <i class="fas fa-table"></i>
+              </div>
+              <div>
+                <h3 class="font-display font-bold text-slate-900 text-base">Google Sheets Web App Sync URL</h3>
+                <p class="text-xs text-slate-500">Connects your GitHub Pages app directly to a free Google Sheet database.</p>
+              </div>
+            </div>
+            <button onclick="openAppsScriptGuide()" class="px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-bold transition-all border border-purple-200 flex items-center">
+              <i class="fas fa-code mr-1.5"></i> Get Apps Script Code
+            </button>
+          </div>
+
+          <div class="space-y-3">
+            <label class="block text-xs font-bold text-slate-700">Current Web App Deployment URL:</label>
+            <div class="flex gap-2">
+              <input 
+                type="text" 
+                id="scriptUrlInput" 
+                placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-purple-500 focus:bg-white focus:outline-none"
+              >
+              <button onclick="saveScriptUrl()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-all shadow flex-shrink-0">
+                Save & Test Sync
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-400">Tip: Once saved, this URL is saved in browser storage and will keep all devices continuously in sync!</p>
+          </div>
+        </div>
+
+        <!-- Setup Roster Accordion -->
         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
           <div class="flex items-center justify-between mb-4">
             <div>
-              <h3 class="font-display font-bold text-slate-900 text-base">Bulk Participant Roster Editor</h3>
-              <p class="text-xs text-slate-500">Paste your list of 44 names below (one name per line) to populate or update the roster.</p>
+              <h3 class="font-display font-bold text-slate-900 text-base">Bulk Roster Manager</h3>
+              <p class="text-xs text-slate-500">Paste your list of names (one name per line) to update the 44 slots.</p>
             </div>
             <button onclick="toggleRosterEditor()" class="text-xs font-bold text-purple-600 hover:text-purple-800">
               <span id="rosterToggleText">Show Editor</span>
@@ -345,7 +373,7 @@
               id="bulkNamesInput" 
               rows="8" 
               class="w-full p-3 font-mono text-xs bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:bg-white focus:outline-none"
-              placeholder="Participant 1&#10;Participant 2&#10;Participant 3..."
+              placeholder="Danial&#10;Afif&#10;Aida..."
             ></textarea>
 
             <div class="flex items-center justify-between flex-wrap gap-2">
@@ -353,11 +381,11 @@
                 Found <span id="parsedNameCount" class="font-bold text-purple-700">0</span> names.
               </div>
               <div class="flex space-x-2">
-                <button onclick="loadSampleNames()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
-                  Load 44 Sample Names
+                <button onclick="loadDefaultRoster()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
+                  Reload CorpComms 44 Roster
                 </button>
                 <button onclick="saveRosterFromBulk()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow">
-                  <i class="fas fa-save mr-1.5"></i> Update Roster in Cloud
+                  <i class="fas fa-save mr-1.5"></i> Update Roster
                 </button>
               </div>
             </div>
@@ -369,7 +397,7 @@
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
               <h3 class="font-display font-bold text-lg text-slate-900">Live Participant Tracker</h3>
-              <p class="text-xs text-slate-500">Real-time status of all 44 participants</p>
+              <p class="text-xs text-slate-500">Real-time status of all 44 team members</p>
             </div>
 
             <!-- Filters -->
@@ -388,7 +416,6 @@
               </select>
               <select id="adminColourFilter" onchange="renderAdminTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none">
                 <option value="all">All Colours</option>
-                <!-- Populated dynamically -->
               </select>
             </div>
           </div>
@@ -412,7 +439,7 @@
             </table>
           </div>
 
-          <!-- Table Footer / Danger Zone -->
+          <!-- Table Footer / Reset buttons -->
           <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between flex-wrap gap-3">
             <span class="text-xs text-slate-400" id="tableRowSummary">Showing 44 of 44 entries</span>
             
@@ -431,14 +458,126 @@
   <!-- Footer -->
   <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 mt-8">
     <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-      <p>Colour-Coded Potluck Draw App &bull; Powered by Realtime Cloud Sync</p>
+      <p>CorpComms All Stars 2026 &bull; Colour-Coded Potluck Draw</p>
       <p class="font-medium text-purple-600">Bring good food & enjoy! 🍱🎉</p>
     </div>
   </footer>
 
-  <!-- MODAL: CUSTOM CONFIRMATION MODAL (No alert/confirm) -->
+  <!-- MODAL: APPS SCRIPT SETUP INSTRUCTIONS -->
+  <div id="appsScriptModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl space-y-4 border border-slate-100 text-left my-8">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg font-bold">
+            <i class="fas fa-file-code"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-lg text-slate-900">1-Minute Google Sheets Setup</h3>
+            <p class="text-xs text-slate-500">Enable instant online syncing across all phones!</p>
+          </div>
+        </div>
+        <button onclick="closeAppsScriptGuide()" class="text-slate-400 hover:text-slate-600 p-2">
+          <i class="fas fa-times text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-600 leading-relaxed max-h-[60vh] overflow-y-auto pr-1">
+        <ol class="list-decimal list-inside space-y-2 font-medium">
+          <li>Create a new blank spreadsheet at <strong><a href="https://sheets.new" target="_blank" class="text-purple-600 underline">sheets.new</a></strong>.</li>
+          <li>In the top menu, click <strong>Extensions &gt; Apps Script</strong>.</li>
+          <li>Delete any code in the editor and paste the 25-line script below:</li>
+        </ol>
+
+        <div class="relative">
+          <pre id="codeSnippet" class="p-3 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-xl overflow-x-auto select-all">function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var p = e.parameter;
+  var action = p.action;
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["ID", "Name", "Drawn", "AssignedColour", "Timestamp"]);
+  }
+
+  if (action === "read") {
+    var data = sheet.getDataRange().getValues();
+    var rows = [];
+    for (var i = 1; i < data.length; i++) {
+      rows.push({
+        id: String(data[i][0]),
+        name: String(data[i][1]),
+        drawn: data[i][2] === true || String(data[i][2]).toLowerCase() === "true",
+        assignedColour: data[i][3] ? String(data[i][3]) : null,
+        timestamp: data[i][4] ? Number(data[i][4]) : null
+      });
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", data: rows }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (action === "draw") {
+    var data = sheet.getDataRange().getValues();
+    for (var k = 1; k < data.length; k++) {
+      if (String(data[k][0]) === p.id) {
+        sheet.getRange(k + 1, 3).setValue(true);
+        sheet.getRange(k + 1, 4).setValue(p.assignedColour);
+        sheet.getRange(k + 1, 5).setValue(p.timestamp);
+        break;
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (action === "reset") {
+    var data = sheet.getDataRange().getValues();
+    for (var m = 1; m < data.length; m++) {
+      if (p.id === "all" || String(data[m][0]) === p.id) {
+        sheet.getRange(m + 1, 3).setValue(false);
+        sheet.getRange(m + 1, 4).setValue("");
+        sheet.getRange(m + 1, 5).setValue("");
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (action === "saveAll") {
+    var payload = JSON.parse(p.data);
+    sheet.clearContents();
+    sheet.appendRow(["ID", "Name", "Drawn", "AssignedColour", "Timestamp"]);
+    for (var j = 0; j < payload.length; j++) {
+      var item = payload[j];
+      sheet.appendRow([item.id, item.name, item.drawn, item.assignedColour || "", item.timestamp || ""]);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</pre>
+          <button onclick="copyAppsScriptCode()" class="absolute top-2 right-2 px-3 py-1 bg-purple-600 text-white font-bold rounded-lg text-[10px] hover:bg-purple-700">
+            Copy Code
+          </button>
+        </div>
+
+        <ol start="4" class="list-decimal list-inside space-y-2 font-medium pt-2">
+          <li>Click <strong>Deploy &gt; New deployment</strong>.</li>
+          <li>Click the gear icon <i class="fas fa-cog"></i> next to "Select type" and choose <strong>Web app</strong>.</li>
+          <li>Set <strong>Execute as:</strong> <code class="bg-slate-100 px-1 rounded font-bold">Me</code> and <strong>Who has access:</strong> <code class="bg-slate-100 px-1 rounded font-bold">Anyone</code>.</li>
+          <li>Click <strong>Deploy</strong>, authorize access if prompted, and copy your <strong>Web App URL</strong>.</li>
+          <li>Paste that Web App URL into the Admin input box above!</li>
+        </ol>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex justify-end">
+        <button onclick="closeAppsScriptGuide()" class="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800">
+          Got It!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMATION -->
   <div id="customModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 border border-slate-100 text-center animate-in fade-in zoom-in duration-200">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 border border-slate-100 text-center">
       <div id="modalIconContainer" class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto">
         <i class="fas fa-question-circle"></i>
       </div>
@@ -455,13 +594,9 @@
     </div>
   </div>
 
-  <!-- FIREBASE persistence script (Module SDK) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, doc, setDoc, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // 11 Core Food-Friendly Colours (4 Slots each = 44 total)
+  <!-- MAIN APPLICATION LOGIC -->
+  <script>
+    // 11 Core Colours x 4 Slots = 44 Total
     const CORE_COLOURS = [
       { name: "Red", hex: "#EF4444", textDark: false, icon: "fa-apple-whole", maxSlots: 4, suggestions: "Strawberries, watermelon, red velvet cake, tomato pasta, sambal/spicy dishes." },
       { name: "Orange", hex: "#F97316", textDark: false, icon: "fa-carrot", maxSlots: 4, suggestions: "Oranges, mandarins, carrots, Cheetos / Super Ring, pumpkin soup, Thai iced tea." },
@@ -476,22 +611,7 @@
       { name: "Gold / Beige", hex: "#D97706", textDark: false, icon: "fa-bread-slice", maxSlots: 4, suggestions: "Curry puffs, nuggets, fries, croissants, potato chips, spring rolls (popiah)." }
     ];
 
-    // Global State
-    let participants = []; // [{id, name, drawn: boolean, assignedColour: string, timestamp: number}]
-    let selectedParticipantId = null;
-    let isAdminUnlocked = false;
-    let adminPin = "1234";
-    let isDrawingInProgress = false;
-
-    // Firebase Setup
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'corpcomms-potluck-draw-2026';
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-
-    let db = null;
-    let auth = null;
-    let isCloudActive = false;
-
-    // Pre-loaded 44 CorpComms All Stars 2026 Team Roster
+    // Default 44 CorpComms All Stars Team Roster
     const DEFAULT_NAMES = [
       "Danial", "Afif", "Aida", "Aifa", "Aisyah", "Amalina", "Amira", "Arifah",
       "Asrawati", "Ayman", "Azlie", "Esther", "Faiza", "Farah", "Farahin", "Farisha",
@@ -501,53 +621,57 @@
       "Thuraya", "Wan", "Wani", "Zeenat"
     ];
 
-    // --- APP INITIALIZATION ---
-    window.addEventListener('load', async () => {
+    // Global State
+    let participants = [];
+    let selectedParticipantId = null;
+    let isAdminUnlocked = false;
+    let adminPin = "1234";
+    let isDrawingInProgress = false;
+    let scriptUrl = localStorage.getItem('potluck_script_url') || "";
+    let pollInterval = null;
+
+    window.addEventListener('load', () => {
       initPoolGrid();
       populateAdminColourFilter();
+      initParticipantsLocal();
 
-      if (firebaseConfig) {
-        try {
-          const app = initializeApp(firebaseConfig);
-          auth = getAuth(app);
-          db = getFirestore(app);
-
-          // Auth execution
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-          isCloudActive = true;
-          document.getElementById('syncStatusText').innerText = "Live Cloud Sync Connected";
-          listenToFirestore();
-        } catch (err) {
-          console.warn("Firestore connection fallback to local mode:", err);
-          initLocalFallback();
-        }
+      if (scriptUrl) {
+        document.getElementById('scriptUrlInput').value = scriptUrl;
+        updateSyncStatus(true, "Connected to Google Sheet");
+        fetchFromGoogleSheet();
       } else {
-        initLocalFallback();
+        updateSyncStatus(false, "Local Mode (Add Google Apps Script URL in Admin)");
       }
+
+      // Start automatic polling every 5 seconds
+      pollInterval = setInterval(() => {
+        if (scriptUrl && !isDrawingInProgress) {
+          fetchFromGoogleSheet(true);
+        }
+      }, 5000);
     });
 
-    function initLocalFallback() {
-      isCloudActive = false;
-      document.getElementById('syncStatusText').innerText = "Local Session Mode (Demo)";
-      // Load or create local data
+    function initParticipantsLocal() {
       const stored = localStorage.getItem('potluck_participants_44');
       if (stored) {
-        participants = JSON.parse(stored);
+        try {
+          participants = JSON.parse(stored);
+        } catch(e) { createDefaultParticipants(); }
       } else {
-        participants = DEFAULT_NAMES.map((name, index) => ({
-          id: `p_${index + 1}`,
-          name: name,
-          drawn: false,
-          assignedColour: null,
-          timestamp: null
-        }));
-        saveLocal();
+        createDefaultParticipants();
       }
       onParticipantsUpdated();
+    }
+
+    function createDefaultParticipants() {
+      participants = DEFAULT_NAMES.map((name, index) => ({
+        id: `p_${index + 1}`,
+        name: name,
+        drawn: false,
+        assignedColour: null,
+        timestamp: null
+      }));
+      saveLocal();
     }
 
     function saveLocal() {
@@ -555,73 +679,113 @@
       onParticipantsUpdated();
     }
 
-    // Realtime Firestore Listener
-    function listenToFirestore() {
-      if (!db) return;
-      const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'potluck_participants');
+    function updateSyncStatus(connected, text) {
+      const statusText = document.getElementById('syncStatusText');
+      const pingDot = document.getElementById('pingDot');
+      const staticDot = document.getElementById('staticDot');
 
-      onSnapshot(colRef, (snapshot) => {
-        if (snapshot.empty) {
-          // Initialize DB with 44 default slots
-          initializeCloudDefaults();
-        } else {
-          const loaded = [];
-          snapshot.forEach(doc => {
-            loaded.push({ id: doc.id, ...doc.data() });
-          });
-          // Sort naturally by ID or index
-          loaded.sort((a, b) => {
-            const numA = parseInt(a.id.replace('p_', '')) || 0;
-            const numB = parseInt(b.id.replace('p_', '')) || 0;
-            return numA - numB;
-          });
-          participants = loaded;
-          onParticipantsUpdated();
-        }
-      }, (err) => {
-        console.error("Snapshot error:", err);
-        showToast("Cloud sync error. Switched to local mode.", "error");
-      });
-    }
-
-    async function initializeCloudDefaults() {
-      if (!db || !auth.currentUser) return;
-      try {
-        const batch = writeBatch(db);
-        DEFAULT_NAMES.forEach((name, i) => {
-          const docId = `p_${i + 1}`;
-          const ref = doc(db, 'artifacts', appId, 'public', 'data', 'potluck_participants', docId);
-          batch.set(ref, {
-            name: name,
-            drawn: false,
-            assignedColour: null,
-            timestamp: null
-          });
-        });
-        await batch.commit();
-      } catch (e) {
-        console.error("Error creating default roster:", e);
+      statusText.innerText = text;
+      if (connected) {
+        pingDot.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
+        staticDot.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500";
+      } else {
+        pingDot.className = "hidden";
+        staticDot.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500";
       }
     }
+
+    // --- GOOGLE APPS SCRIPT SYNC FUNCTIONS ---
+    async function fetchFromGoogleSheet(isSilent = false) {
+      if (!scriptUrl) return;
+      try {
+        const res = await fetch(`${scriptUrl}?action=read&t=${Date.now()}`);
+        const result = await res.json();
+        if (result && result.status === "success" && Array.isArray(result.data) && result.data.length > 0) {
+          // Merge data preserving local roster order
+          const cloudMap = {};
+          result.data.forEach(item => cloudMap[item.id] = item);
+
+          participants = participants.map(p => {
+            const cloudItem = cloudMap[p.id];
+            if (cloudItem) {
+              return {
+                ...p,
+                drawn: cloudItem.drawn,
+                assignedColour: cloudItem.assignedColour,
+                timestamp: cloudItem.timestamp
+              };
+            }
+            return p;
+          });
+
+          saveLocal();
+          updateSyncStatus(true, "Live Google Sheet Synced");
+          if (!isSilent) showToast("Synced latest draws from Google Sheet!", "success");
+        } else if (result.data && result.data.length === 0) {
+          // Sheet is empty, populate it automatically!
+          uploadRosterToGoogleSheet();
+        }
+      } catch (err) {
+        console.warn("Google Sheet sync fetch warning:", err);
+        updateSyncStatus(false, "Syncing fallback (check URL)");
+      }
+    }
+
+    async function uploadRosterToGoogleSheet() {
+      if (!scriptUrl) return;
+      try {
+        const payload = encodeURIComponent(JSON.stringify(participants));
+        await fetch(`${scriptUrl}?action=saveAll&data=${payload}&t=${Date.now()}`);
+      } catch (e) {
+        console.error("Error uploading roster:", e);
+      }
+    }
+
+    async function sendDrawToGoogleSheet(pId, colour, timestamp) {
+      if (!scriptUrl) return;
+      try {
+        const url = `${scriptUrl}?action=draw&id=${encodeURIComponent(pId)}&assignedColour=${encodeURIComponent(colour)}&timestamp=${timestamp}&t=${Date.now()}`;
+        await fetch(url);
+      } catch (e) {
+        console.error("Error sending draw to Google Sheet:", e);
+      }
+    }
+
+    async function sendResetToGoogleSheet(pId) {
+      if (!scriptUrl) return;
+      try {
+        const url = `${scriptUrl}?action=reset&id=${encodeURIComponent(pId)}&t=${Date.now()}`;
+        await fetch(url);
+      } catch (e) {
+        console.error("Error sending reset to Google Sheet:", e);
+      }
+    }
+
+    window.saveScriptUrl = function() {
+      const val = document.getElementById('scriptUrlInput').value.trim();
+      if (!val || !val.startsWith("https://script.google.com")) {
+        showToast("Please enter a valid Google Apps Script URL starting with https://script.google.com", "error");
+        return;
+      }
+      scriptUrl = val;
+      localStorage.setItem('potluck_script_url', scriptUrl);
+      showToast("Google Apps Script URL saved!", "success");
+      updateSyncStatus(true, "Connecting to Google Sheet...");
+      fetchFromGoogleSheet();
+    };
 
     // --- REACTION WHEN DATA CHANGES ---
     function onParticipantsUpdated() {
       updateDrawnCounter();
       renderPoolGridStats();
 
-      // If user currently has a selected name, refresh their view state
       if (selectedParticipantId) {
         const currentP = participants.find(p => p.id === selectedParticipantId);
-        if (currentP) {
-          renderParticipantState(currentP);
-        }
+        if (currentP) renderParticipantState(currentP);
       }
 
-      if (isAdminUnlocked) {
-        renderAdminTable();
-      }
+      if (isAdminUnlocked) renderAdminTable();
 
-      // Update bulk names textarea if not actively typing
       const bulkInput = document.getElementById('bulkNamesInput');
       if (document.activeElement !== bulkInput) {
         bulkInput.value = participants.map(p => p.name).join('\n');
@@ -657,7 +821,6 @@
     }
 
     function renderPoolGridStats() {
-      // Calculate drawn counts per colour
       const counts = {};
       CORE_COLOURS.forEach(c => counts[c.name] = 0);
       participants.forEach(p => {
@@ -696,11 +859,8 @@
       const dropdown = document.getElementById('nameDropdown');
       const clearBtn = document.getElementById('clearNameBtn');
 
-      if (query.length > 0) {
-        clearBtn.classList.remove('hidden');
-      } else {
-        clearBtn.classList.add('hidden');
-      }
+      if (query.length > 0) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
 
       const filtered = participants.filter(p => p.name.toLowerCase().includes(query));
       
@@ -724,9 +884,7 @@
       dropdown.classList.remove('hidden');
     };
 
-    window.showNameDropdown = function() {
-      filterNames();
-    };
+    window.showNameDropdown = function() { filterNames(); };
 
     window.selectParticipant = function(id) {
       const p = participants.find(item => item.id === id);
@@ -746,7 +904,6 @@
       document.getElementById('nameDropdown').classList.add('hidden');
       document.getElementById('clearNameBtn').classList.add('hidden');
 
-      // Hide states
       document.getElementById('stateSelectPrompt').classList.remove('hidden');
       document.getElementById('stateReadyToRoll').classList.add('hidden');
       document.getElementById('stateRolling').classList.add('hidden');
@@ -758,15 +915,11 @@
       document.getElementById('stateRolling').classList.add('hidden');
 
       if (p.drawn && p.assignedColour) {
-        // Show Drawn Result Immediately
         document.getElementById('stateReadyToRoll').classList.add('hidden');
         document.getElementById('stateResult').classList.remove('hidden');
 
         const colourObj = CORE_COLOURS.find(c => c.name === p.assignedColour) || {
-          name: p.assignedColour,
-          hex: "#6B7280",
-          icon: "fa-utensils",
-          suggestions: "Bring any dish matching this shade!"
+          name: p.assignedColour, hex: "#6B7280", icon: "fa-utensils", suggestions: "Bring any dish matching this shade!"
         };
 
         document.getElementById('resultBadgeText').innerText = `Locked in for ${p.name}`;
@@ -781,7 +934,6 @@
         document.getElementById('resultSuggestions').innerText = colourObj.suggestions;
 
       } else {
-        // Ready to Roll State
         document.getElementById('stateResult').classList.add('hidden');
         document.getElementById('stateReadyToRoll').classList.remove('hidden');
         document.getElementById('selectedUserHeader').innerText = `Hello, ${p.name}!`;
@@ -800,7 +952,7 @@
         return;
       }
 
-      // 1. Calculate remaining available slots
+      // Calculate available colours (< 4 slots)
       const counts = {};
       CORE_COLOURS.forEach(c => counts[c.name] = 0);
       participants.forEach(item => {
@@ -816,14 +968,12 @@
         return;
       }
 
-      // 2. Start Animation State
       isDrawingInProgress = true;
       document.getElementById('stateReadyToRoll').classList.add('hidden');
       document.getElementById('stateRolling').classList.remove('hidden');
 
       const rollingDisplay = document.getElementById('rollingDisplay');
       
-      // Shuffle animation loop for 2.5 seconds
       let shuffleInterval = setInterval(() => {
         const tempColour = availableColours[Math.floor(Math.random() * availableColours.length)];
         rollingDisplay.style.backgroundColor = tempColour.hex;
@@ -837,47 +987,25 @@
       setTimeout(async () => {
         clearInterval(shuffleInterval);
 
-        // Pick final random colour
         const pickedColour = availableColours[Math.floor(Math.random() * availableColours.length)];
         const timestamp = Date.now();
 
-        // Save state to Cloud or Local
-        try {
-          if (isCloudActive && db && auth.currentUser) {
-            const pRef = doc(db, 'artifacts', appId, 'public', 'data', 'potluck_participants', p.id);
-            await setDoc(pRef, {
-              name: p.name,
-              drawn: true,
-              assignedColour: pickedColour.name,
-              timestamp: timestamp
-            }, { merge: true });
-          } else {
-            p.drawn = true;
-            p.assignedColour = pickedColour.name;
-            p.timestamp = timestamp;
-            saveLocal();
-          }
+        // Optimistic UI update
+        p.drawn = true;
+        p.assignedColour = pickedColour.name;
+        p.timestamp = timestamp;
+        saveLocal();
 
-          isDrawingInProgress = false;
+        // Send background update to Google Sheet
+        await sendDrawToGoogleSheet(p.id, pickedColour.name, timestamp);
 
-          // Fire Confetti
-          if (typeof confetti === 'function') {
-            confetti({
-              particleCount: 100,
-              spread: 70,
-              origin: { y: 0.6 }
-            });
-          }
+        isDrawingInProgress = false;
 
-          showToast(`Successfully drawn: ${pickedColour.name}!`, "success");
-
-        } catch (err) {
-          console.error("Error saving draw:", err);
-          isDrawingInProgress = false;
-          showToast("Failed to lock in draw. Please try again.", "error");
-          document.getElementById('stateRolling').classList.add('hidden');
-          document.getElementById('stateReadyToRoll').classList.remove('hidden');
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
         }
+
+        showToast(`Successfully drawn: ${pickedColour.name}!`, "success");
 
       }, 2500);
     };
@@ -889,12 +1017,12 @@
       if (!p || !p.assignedColour) return;
 
       const colourObj = CORE_COLOURS.find(c => c.name === p.assignedColour);
-      const text = `🎨 Colour-Coded Potluck! 🍱\n\nName: ${p.name}\nAssigned Colour: ${p.assignedColour}\nDish Ideas: ${colourObj ? colourObj.suggestions : ''}\n\nSee you at the party! 🎉`;
+      const text = `🎨 CorpComms Potluck 2026 🍱\n\nName: ${p.name}\nAssigned Colour: ${p.assignedColour}\nDish Ideas: ${colourObj ? colourObj.suggestions : ''}\n\nSee you at the party! 🎉`;
 
       copyToClipboard(text, "Colour details copied to clipboard!");
     };
 
-    // --- ADMIN PANEL FUNCTIONS ---
+    // --- ADMIN PANEL & TABS ---
     window.switchTab = function(tab) {
       const drawBtn = document.getElementById('navDrawBtn');
       const adminBtn = document.getElementById('navAdminBtn');
@@ -924,7 +1052,7 @@
         renderAdminTable();
         showToast("Organizer Admin Unlocked!", "success");
       } else {
-        showToast("Incorrect PIN. Please try default '1234'.", "error");
+        showToast("Incorrect PIN. Please use '1234'.", "error");
       }
     };
 
@@ -1009,7 +1137,7 @@
       }).join('');
     };
 
-    // --- ROSTER BULK MANAGEMENT ---
+    // --- ROSTER MANAGEMENT ---
     window.toggleRosterEditor = function() {
       const body = document.getElementById('rosterEditorBody');
       const text = document.getElementById('rosterToggleText');
@@ -1022,7 +1150,7 @@
       }
     };
 
-    window.loadSampleNames = function() {
+    window.loadDefaultRoster = function() {
       document.getElementById('bulkNamesInput').value = DEFAULT_NAMES.join('\n');
       document.getElementById('parsedNameCount').innerText = 44;
     };
@@ -1038,45 +1166,24 @@
 
       openModal({
         title: "Update Roster?",
-        body: `This will update the roster to ${lines.length} names. Existing draw assignments for matching position slots will be preserved. Continue?`,
+        body: `This will set the roster to ${lines.length} participants. Existing draws will be updated.`,
         icon: "fa-users",
         confirmText: "Update Roster",
         onConfirm: async () => {
-          try {
-            if (isCloudActive && db && auth.currentUser) {
-              const batch = writeBatch(db);
-              lines.forEach((name, i) => {
-                const docId = `p_${i + 1}`;
-                const existing = participants.find(p => p.id === docId);
-                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'potluck_participants', docId);
-                
-                batch.set(ref, {
-                  name: name,
-                  drawn: existing ? existing.drawn : false,
-                  assignedColour: existing ? existing.assignedColour : null,
-                  timestamp: existing ? existing.timestamp : null
-                }, { merge: true });
-              });
-              await batch.commit();
-            } else {
-              participants = lines.map((name, i) => {
-                const docId = `p_${i + 1}`;
-                const existing = participants.find(p => p.id === docId);
-                return {
-                  id: docId,
-                  name: name,
-                  drawn: existing ? existing.drawn : false,
-                  assignedColour: existing ? existing.assignedColour : null,
-                  timestamp: existing ? existing.timestamp : null
-                };
-              });
-              saveLocal();
-            }
-            showToast("Roster updated successfully!", "success");
-          } catch (e) {
-            console.error(e);
-            showToast("Failed to update roster in cloud.", "error");
-          }
+          participants = lines.map((name, i) => {
+            const docId = `p_${i + 1}`;
+            const existing = participants.find(p => p.id === docId);
+            return {
+              id: docId,
+              name: name,
+              drawn: existing ? existing.drawn : false,
+              assignedColour: existing ? existing.assignedColour : null,
+              timestamp: existing ? existing.timestamp : null
+            };
+          });
+          saveLocal();
+          await uploadRosterToGoogleSheet();
+          showToast("Roster updated successfully!", "success");
         }
       });
     };
@@ -1088,28 +1195,16 @@
 
       openModal({
         title: `Reset ${p.name}?`,
-        body: `This will reset ${p.name}'s assigned colour (${p.assignedColour}) so they can re-roll.`,
+        body: `This will reset ${p.name}'s draw (${p.assignedColour}) so they can re-roll.`,
         icon: "fa-undo",
         confirmText: "Reset Draw",
         onConfirm: async () => {
-          try {
-            if (isCloudActive && db && auth.currentUser) {
-              const pRef = doc(db, 'artifacts', appId, 'public', 'data', 'potluck_participants', p.id);
-              await setDoc(pRef, {
-                drawn: false,
-                assignedColour: null,
-                timestamp: null
-              }, { merge: true });
-            } else {
-              p.drawn = false;
-              p.assignedColour = null;
-              p.timestamp = null;
-              saveLocal();
-            }
-            showToast(`Reset draw for ${p.name}.`, "success");
-          } catch (e) {
-            showToast("Error resetting participant.", "error");
-          }
+          p.drawn = false;
+          p.assignedColour = null;
+          p.timestamp = null;
+          saveLocal();
+          await sendResetToGoogleSheet(p.id);
+          showToast(`Reset draw for ${p.name}.`, "success");
         }
       });
     };
@@ -1121,37 +1216,21 @@
         icon: "fa-exclamation-triangle",
         confirmText: "Reset All",
         onConfirm: async () => {
-          try {
-            if (isCloudActive && db && auth.currentUser) {
-              const batch = writeBatch(db);
-              participants.forEach(p => {
-                const pRef = doc(db, 'artifacts', appId, 'public', 'data', 'potluck_participants', p.id);
-                batch.set(pRef, {
-                  drawn: false,
-                  assignedColour: null,
-                  timestamp: null
-                }, { merge: true });
-              });
-              await batch.commit();
-            } else {
-              participants.forEach(p => {
-                p.drawn = false;
-                p.assignedColour = null;
-                p.timestamp = null;
-              });
-              saveLocal();
-            }
-            showToast("All draws have been reset!", "success");
-          } catch (e) {
-            showToast("Error resetting all draws.", "error");
-          }
+          participants.forEach(p => {
+            p.drawn = false;
+            p.assignedColour = null;
+            p.timestamp = null;
+          });
+          saveLocal();
+          await sendResetToGoogleSheet("all");
+          showToast("All draws have been reset!", "success");
         }
       });
     };
 
     // --- EXPORTS SUMMARY ---
     window.copyWhatsAppSummary = function() {
-      let text = `🎨 *COLOUR-CODED POTLUCK SUMMARY* 🍱\n\n`;
+      let text = `🎨 *CORPCOMMS POTLUCK COLOUR SUMMARY* 🍱\n\n`;
       
       CORE_COLOURS.forEach(c => {
         const assigned = participants.filter(p => p.drawn && p.assignedColour === c.name);
@@ -1172,7 +1251,7 @@
         text += pending.map(p => p.name).join(', ') + `\n\n`;
       }
 
-      text += `Draw online here! 🎉`;
+      text += `Draw online here: https://ijnconnect.github.io/colorcodedpotluck/ 🎉`;
 
       copyToClipboard(text, "WhatsApp summary copied to clipboard!");
     };
@@ -1195,7 +1274,20 @@
       showToast("Downloaded CSV summary!", "success");
     };
 
-    // --- UI UTILS & MODALS ---
+    // --- MODALS & UTILS ---
+    window.openAppsScriptGuide = function() {
+      document.getElementById('appsScriptModal').classList.remove('hidden');
+    };
+
+    window.closeAppsScriptGuide = function() {
+      document.getElementById('appsScriptModal').classList.add('hidden');
+    };
+
+    window.copyAppsScriptCode = function() {
+      const code = document.getElementById('codeSnippet').innerText;
+      copyToClipboard(code, "Apps Script code copied to clipboard!");
+    };
+
     window.togglePoolDetails = function() {
       const grid = document.getElementById('poolGrid');
       const text = document.getElementById('poolToggleText');
@@ -1226,9 +1318,7 @@
       }
 
       toast.classList.remove('translate-y-[-150%]');
-      setTimeout(() => {
-        hideToast();
-      }, 3500);
+      setTimeout(() => { hideToast(); }, 3500);
     }
 
     window.hideToast = function() {
@@ -1273,7 +1363,6 @@
     function escapeHtml(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     }
-
   </script>
 </body>
 </html>
