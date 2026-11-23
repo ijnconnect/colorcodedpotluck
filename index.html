@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Colour-Coded Potluck Draw</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+          },
+          animation: {
+            'bounce-slow': 'bounce 2s infinite',
+            'pulse-fast': 'pulse 1s infinite',
+            'spin-wheels': 'spin 0.6s linear infinite',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom styling & wheel animations */
+    .rainbow-border {
+      background: linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #a855f7, #ec4899);
+      background-size: 200% 200%;
+      animation: rainbowGlow 4s ease infinite;
+    }
+    @keyframes rainbowGlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .wheel-rotate {
+      transition: transform 4s cubic-bezier(0.15, 0.99, 0.24, 1.00);
+    }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans flex flex-col justify-between antialiased selection:bg-purple-500 selection:text-white">
+
+  <!-- Toast Notification Bar -->
+  <div id="toast" class="fixed top-4 right-4 z-50 transform translate-y-[-150%] transition-all duration-300 max-w-md w-full bg-slate-900 text-white p-4 rounded-xl shadow-2xl flex items-center justify-between space-x-3 pointer-events-none">
+    <div class="flex items-center space-x-3">
+      <div id="toastIcon" class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0">
+        <i class="fas font-bold fa-check"></i>
+      </div>
+      <p id="toastMessage" class="text-sm font-medium">Notification message</p>
+    </div>
+    <button onclick="hideToast()" class="text-slate-400 hover:text-white p-1">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <!-- Header Banner -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl rainbow-border p-0.5 shadow-md flex items-center justify-center">
+          <div class="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
+            <i class="fas fa-utensils text-purple-600 text-lg"></i>
+          </div>
+        </div>
+        <div>
+          <h1 class="font-display font-extrabold text-lg sm:text-xl text-slate-900 leading-tight">
+            CorpComms All Stars 2026 — Colour-Coded Potluck! 🎉
+          </h1>
+          <p class="text-xs text-slate-500 font-medium">Pick your name, draw a colour, bring matching food!</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center space-x-2 bg-slate-100 p-1 rounded-xl">
+        <button id="navDrawBtn" onclick="switchTab('draw')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-purple-700 shadow-sm">
+          <i class="fas fa-dice text-purple-500 mr-1.5"></i> Draw Colour
+        </button>
+        <button id="navAdminBtn" onclick="switchTab('admin')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900">
+          <i class="fas fa-user-shield mr-1.5"></i> Organizer Admin
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-5xl mx-auto px-4 py-6 flex-grow w-full">
+
+    <!-- CONNECTION STATUS BAR -->
+    <div id="syncBadge" class="mb-6 bg-purple-50 border border-purple-200 rounded-xl p-3 flex items-center justify-between text-xs text-purple-900 shadow-sm">
+      <div class="flex items-center space-x-2">
+        <span class="relative flex h-2.5 w-2.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+        </span>
+        <span class="font-semibold" id="syncStatusText">Syncing online via cloud...</span>
+      </div>
+      <div class="flex items-center space-x-3">
+        <span class="bg-white px-2.5 py-1 rounded-lg border border-purple-100 font-bold text-purple-700">
+          <i class="fas fa-users text-purple-500 mr-1"></i> <span id="drawnCounter">0/44</span> Drawn
+        </span>
+      </div>
+    </div>
+
+    <!-- ==================== PARTICIPANT DRAW VIEW ==================== -->
+    <section id="participantView" class="space-y-6">
+      
+      <!-- Participant Name Selector Card -->
+      <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md transition-shadow">
+        <label class="block text-sm font-bold text-slate-800 mb-2 flex items-center justify-between">
+          <span><i class="fas fa-user text-purple-600 mr-2"></i>Step 1: Select Your Name</span>
+          <span class="text-xs font-normal text-slate-400">44 Participants Total</span>
+        </label>
+        
+        <div class="relative">
+          <div class="relative flex items-center">
+            <i class="fas fa-search absolute left-4 text-slate-400"></i>
+            <input 
+              type="text" 
+              id="nameSearchInput" 
+              placeholder="Search or type your name..." 
+              oninput="filterNames()"
+              onfocus="showNameDropdown()"
+              class="w-full pl-11 pr-10 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-sm font-semibold focus:ring-2 focus:ring-purple-500 focus:bg-white focus:outline-none transition-all"
+            >
+            <button id="clearNameBtn" onclick="clearNameSelection()" class="hidden absolute right-3 text-slate-400 hover:text-slate-600 p-1">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </div>
+
+          <!-- Dropdown Suggestions -->
+          <div id="nameDropdown" class="hidden absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 max-h-60 overflow-y-auto divide-y divide-slate-100">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN DRAWING CARD -->
+      <div id="drawActionContainer" class="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm text-center relative overflow-hidden">
+        
+        <!-- INITIAL UNSELECTED STATE -->
+        <div id="stateSelectPrompt" class="py-10 space-y-4">
+          <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto text-purple-600 text-3xl animate-bounce-slow">
+            <i class="fas fa-hand-pointer"></i>
+          </div>
+          <h2 class="font-display font-extrabold text-xl text-slate-900">Search & Select Your Name Above</h2>
+          <p class="text-sm text-slate-500 max-w-md mx-auto">Select your name to draw a potluck food colour slot or view your previously assigned colour.</p>
+        </div>
+
+        <!-- READY TO ROLL STATE -->
+        <div id="stateReadyToRoll" class="hidden space-y-6 py-4">
+          <div class="inline-block px-4 py-1.5 rounded-full bg-purple-100 text-purple-700 text-xs font-bold tracking-wide uppercase">
+            <i class="fas fa-sparkles mr-1"></i> Ready to Draw
+          </div>
+          
+          <div>
+            <h2 class="font-display font-black text-2xl sm:text-3xl text-slate-900" id="selectedUserHeader">Hello, Participant!</h2>
+            <p class="text-sm text-slate-500 mt-1">Click the button below to randomly draw your potluck colour.</p>
+          </div>
+
+          <!-- Spinning Wheel / Slot Graphic Container -->
+          <div class="relative max-w-xs mx-auto my-6">
+            <div id="spinnerVisual" class="w-48 h-48 rounded-full border-8 border-slate-900 shadow-2xl mx-auto relative overflow-hidden flex items-center justify-center rainbow-border p-2">
+              <div class="w-full h-full bg-slate-900 rounded-full flex flex-col items-center justify-center text-white p-4 text-center">
+                <i class="fas fa-question text-4xl text-amber-400 mb-1 animate-pulse"></i>
+                <span class="text-xs font-bold tracking-widest uppercase text-slate-300">Mystery Colour</span>
+              </div>
+            </div>
+          </div>
+
+          <button 
+            id="rollBtn" 
+            onclick="executeDraw()"
+            class="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-display font-bold text-lg rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 transition-all w-full sm:w-auto"
+          >
+            <i class="fas fa-dice-five mr-2 text-amber-300"></i> Roll My Colour!
+          </button>
+
+          <p class="text-xs text-slate-400 italic">Each colour is randomly assigned & automatically locked once drawn.</p>
+        </div>
+
+        <!-- ANIMATING DRAW STATE -->
+        <div id="stateRolling" class="hidden py-12 space-y-6">
+          <div id="rollingDisplay" class="w-40 h-40 rounded-full mx-auto flex flex-col items-center justify-center text-white font-display font-extrabold text-xl shadow-2xl transition-all duration-100 bg-purple-600">
+            <i class="fas fa-sync-alt fa-spin text-3xl mb-2"></i>
+            <span>Picking...</span>
+          </div>
+          <h3 class="font-display font-bold text-xl text-slate-800 animate-pulse">Assigning your secret potluck colour...</h3>
+        </div>
+
+        <!-- RESULT DISPLAY STATE (NEWLY DRAWN OR REVISITING) -->
+        <div id="stateResult" class="hidden space-y-6 py-4">
+          <div id="resultBadge" class="inline-flex items-center space-x-1.5 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+            <i class="fas fa-lock"></i>
+            <span id="resultBadgeText">Locked in for Participant</span>
+          </div>
+
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Your Potluck Colour Is</span>
+            <h2 id="resultColourTitle" class="font-display font-black text-3xl sm:text-4xl text-slate-900 mt-1">
+              RED
+            </h2>
+          </div>
+
+          <!-- Colour Swatch Display -->
+          <div class="max-w-xs mx-auto p-1 rounded-3xl shadow-xl border border-slate-100">
+            <div id="resultColourBox" class="w-full h-36 rounded-2xl flex flex-col items-center justify-center text-white p-4 transition-all shadow-inner">
+              <i id="resultIcon" class="fas fa-utensils text-4xl mb-2 drop-shadow-md"></i>
+              <span id="resultHexTag" class="text-xs font-mono bg-black/30 px-3 py-1 rounded-full font-bold backdrop-blur-sm">#EF4444</span>
+            </div>
+          </div>
+
+          <!-- Food Suggestions -->
+          <div class="max-w-md mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left">
+            <h4 class="text-xs font-bold uppercase text-slate-500 tracking-wider mb-2 flex items-center">
+              <i class="fas fa-lightbulb text-amber-500 mr-2"></i> What you can bring:
+            </h4>
+            <p id="resultSuggestions" class="text-sm font-medium text-slate-700 leading-relaxed">
+              Strawberries, watermelon, red velvet cake, tomato pasta, sambal dishes.
+            </p>
+          </div>
+
+          <!-- Action buttons for user -->
+          <div class="flex flex-wrap justify-center gap-3 pt-2">
+            <button onclick="copyParticipantShareText()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center transition-all">
+              <i class="fas fa-copy mr-2"></i> Copy My Colour Details
+            </button>
+            <button onclick="clearNameSelection()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center transition-all">
+              <i class="fas fa-user-friends mr-2"></i> Select Another Name
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- COLOUR POOL OVERVIEW (SLOTS BREAKDOWN) -->
+      <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-display font-bold text-base text-slate-900">Colour Slots Overview</h3>
+            <p class="text-xs text-slate-500">11 Colours × 4 Slots = 44 Total Participants</p>
+          </div>
+          <button onclick="togglePoolDetails()" class="text-xs font-bold text-purple-600 hover:text-purple-800">
+            <span id="poolToggleText">Hide Details</span>
+          </button>
+        </div>
+
+        <div id="poolGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <!-- Dynamically populated colour cards -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ORGANIZER ADMIN VIEW ==================== -->
+    <section id="adminView" class="hidden space-y-6">
+      
+      <!-- PIN PROTECTED LOCK SCREEN -->
+      <div id="adminPinCard" class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm max-w-md mx-auto text-center">
+        <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 text-2xl mx-auto mb-4">
+          <i class="fas fa-user-shield"></i>
+        </div>
+        <h2 class="font-display font-bold text-xl text-slate-900 mb-1">Organizer Admin Access</h2>
+        <p class="text-xs text-slate-500 mb-6">Enter PIN to manage participants, setup names, or export results. (Default PIN: <strong class="text-purple-700">1234</strong>)</p>
+
+        <form onsubmit="handlePinSubmit(event)" class="space-y-4">
+          <input 
+            type="password" 
+            id="adminPinInput" 
+            placeholder="Enter Organizer PIN..." 
+            class="w-full text-center text-lg tracking-widest py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none"
+            maxlength="8"
+          >
+          <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm transition-all shadow-md">
+            Unlock Admin Panel
+          </button>
+        </form>
+      </div>
+
+      <!-- UNLOCKED ADMIN PANEL CONTENT -->
+      <div id="adminPanelContent" class="hidden space-y-6">
+        
+        <!-- Admin Bar & Tools -->
+        <div class="bg-slate-900 text-white rounded-3xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="bg-emerald-500 text-slate-900 text-xs font-black px-2.5 py-0.5 rounded-full uppercase">Unlocked</span>
+              <h2 class="font-display font-bold text-xl">Organizer Control Center</h2>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Manage participants, track color assignments, and export summary.</p>
+          </div>
+
+          <div class="flex flex-wrap gap-2 w-full md:w-auto">
+            <button onclick="copyWhatsAppSummary()" class="flex-1 md:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center transition-all shadow">
+              <i class="fab fa-whatsapp text-sm mr-2"></i> Copy WhatsApp Summary
+            </button>
+            <button onclick="exportCSV()" class="flex-1 md:flex-none px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center justify-center transition-all border border-slate-700">
+              <i class="fas fa-file-csv text-sm mr-2"></i> Download CSV
+            </button>
+            <button onclick="lockAdmin()" class="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl text-xs font-bold border border-slate-700">
+              <i class="fas fa-lock"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Setup & Roster Editor Accordion -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-display font-bold text-slate-900 text-base">Bulk Participant Roster Editor</h3>
+              <p class="text-xs text-slate-500">Paste your list of 44 names below (one name per line) to populate or update the roster.</p>
+            </div>
+            <button onclick="toggleRosterEditor()" class="text-xs font-bold text-purple-600 hover:text-purple-800">
+              <span id="rosterToggleText">Show Editor</span>
+            </button>
+          </div>
+
+          <div id="rosterEditorBody" class="hidden space-y-4 pt-2">
+            <textarea 
+              id="bulkNamesInput" 
+              rows="8" 
+              class="w-full p-3 font-mono text-xs bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:bg-white focus:outline-none"
+              placeholder="Participant 1&#10;Participant 2&#10;Participant 3..."
+            ></textarea>
+
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="text-xs text-slate-500">
+                Found <span id="parsedNameCount" class="font-bold text-purple-700">0</span> names.
+              </div>
+              <div class="flex space-x-2">
+                <button onclick="loadSampleNames()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
+                  Load 44 Sample Names
+                </button>
+                <button onclick="saveRosterFromBulk()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow">
+                  <i class="fas fa-save mr-1.5"></i> Update Roster in Cloud
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIVE PARTICIPANT STATUS TABLE -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 class="font-display font-bold text-lg text-slate-900">Live Participant Tracker</h3>
+              <p class="text-xs text-slate-500">Real-time status of all 44 participants</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap items-center gap-2">
+              <input 
+                type="text" 
+                id="adminSearchInput" 
+                oninput="renderAdminTable()"
+                placeholder="Search name..." 
+                class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
+              >
+              <select id="adminStatusFilter" onchange="renderAdminTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                <option value="all">All Statuses</option>
+                <option value="drawn">Drawn Only</option>
+                <option value="pending">Pending Only</option>
+              </select>
+              <select id="adminColourFilter" onchange="renderAdminTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                <option value="all">All Colours</option>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto rounded-2xl border border-slate-100">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider border-b border-slate-100">
+                <tr>
+                  <th class="py-3 px-4">#</th>
+                  <th class="py-3 px-4">Participant Name</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4">Assigned Colour</th>
+                  <th class="py-3 px-4">Time Drawn</th>
+                  <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminTableBody" class="divide-y divide-slate-100 font-medium">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Table Footer / Danger Zone -->
+          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between flex-wrap gap-3">
+            <span class="text-xs text-slate-400" id="tableRowSummary">Showing 44 of 44 entries</span>
+            
+            <button onclick="confirmResetAll()" class="px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 rounded-xl text-xs font-bold transition-all">
+              <i class="fas fa-exclamation-triangle mr-1"></i> Reset All Draws
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 mt-8">
+    <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>Colour-Coded Potluck Draw App &bull; Powered by Realtime Cloud Sync</p>
+      <p class="font-medium text-purple-600">Bring good food & enjoy! 🍱🎉</p>
+    </div>
+  </footer>
+
+  <!-- MODAL: CUSTOM CONFIRMATION MODAL (No alert/confirm) -->
+  <div id="customModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 border border-slate-100 text-center animate-in fade-in zoom-in duration-200">
+      <div id="modalIconContainer" class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto">
+        <i class="fas fa-question-circle"></i>
+      </div>
+      <h3 id="modalTitle" class="font-display font-bold text-lg text-slate-900">Are you sure?</h3>
+      <p id="modalBody" class="text-xs text-slate-500 leading-relaxed">This action cannot be undone.</p>
+      <div class="flex items-center space-x-3 pt-2">
+        <button id="modalCancelBtn" onclick="closeModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all">
+          Cancel
+        </button>
+        <button id="modalConfirmBtn" class="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md transition-all">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREBASE persistence script (Module SDK) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, doc, setDoc, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // 11 Core Food-Friendly Colours (4 Slots each = 44 total)
+    const CORE_COLOURS = [
+      { name: "Red", hex: "#EF4444", textDark: false, icon: "fa-apple-whole", maxSlots: 4, suggestions: "Strawberries, watermelon, red velvet cake, tomato pasta, sambal/spicy dishes." },
+      { name: "Orange", hex: "#F97316", textDark: false, icon: "fa-carrot", maxSlots: 4, suggestions: "Oranges, mandarins, carrots, Cheetos / Super Ring, pumpkin soup, Thai iced tea." },
+      { name: "Yellow", hex: "#EAB308", textDark: true, icon: "fa-lemon", maxSlots: 4, suggestions: "Pineapple, corn, lemon tarts, banana fritters (pisang goreng), egg tarts, mango." },
+      { name: "Green", hex: "#22C55E", textDark: false, icon: "fa-leaf", maxSlots: 4, suggestions: "Pandan kuih, green grapes, guacamole, cucumber sandwiches, matcha desserts, kiwi." },
+      { name: "Blue", hex: "#3B82F6", textDark: false, icon: "fa-glass-water", maxSlots: 4, suggestions: "Blueberries, butterfly pea (nasi kerabu / tea), blue macarons, blue jelly, Gatorade." },
+      { name: "Purple", hex: "#A855F7", textDark: false, icon: "fa-wine-bottle", maxSlots: 4, suggestions: "Purple grapes, yam / taro (keladi) cake, Ribena, purple sweet potato, ube treats." },
+      { name: "Pink", hex: "#EC4899", textDark: false, icon: "fa-candy-cane", maxSlots: 4, suggestions: "Bandung drink, pink donuts, strawberry Pocky, dragon fruit, pink cupcakes." },
+      { name: "Brown", hex: "#92400E", textDark: false, icon: "fa-cookie", maxSlots: 4, suggestions: "Chocolate brownies, fried chicken, Milo / iced coffee, dates, satay, pretzels." },
+      { name: "White / Cream", hex: "#F3F4F6", textDark: true, icon: "fa-egg", maxSlots: 4, suggestions: "Coconut jelly, lychee, bao buns, vanilla ice cream, popcorn, cream puffs, tofu." },
+      { name: "Black / Dark", hex: "#1F2937", textDark: false, icon: "fa-bowl-food", maxSlots: 4, suggestions: "Oreos, dark chocolate, black sesame desserts, grass jelly (cincau), blackberries." },
+      { name: "Gold / Beige", hex: "#D97706", textDark: false, icon: "fa-bread-slice", maxSlots: 4, suggestions: "Curry puffs, nuggets, fries, croissants, potato chips, spring rolls (popiah)." }
+    ];
+
+    // Global State
+    let participants = []; // [{id, name, drawn: boolean, assignedColour: string, timestamp: number}]
+    let selectedParticipantId = null;
+    let isAdminUnlocked = false;
+    let adminPin = "1234";
+    let isDrawingInProgress = false;
+
+    // Firebase Setup
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'corpcomms-potluck-draw-2026';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
+    let db = null;
+    let auth = null;
+    let isCloudActive = false;
+
+    // Pre-loaded 44 CorpComms All Stars 2026 Team Roster
+    const DEFAULT_NAMES = [
+      "Danial", "Afif", "Aida", "Aifa", "Aisyah", "Amalina", "Amira", "Arifah",
+      "Asrawati", "Ayman", "Azlie", "Esther", "Faiza", "Farah", "Farahin", "Farisha",
+      "Fatiha", "Fazin", "Halijah", "Harith", "Ilham", "Izrinda", "Janelle", "Maam Aina",
+      "Mariam", "Nadia", "Nizam", "Osman", "Radha", "Raya", "Sabbir", "Satish",
+      "Shahril", "Shahriman", "Shahroni", "Sobri", "Sofea", "Syahmie", "Syazana", "Tarmizi",
+      "Thuraya", "Wan", "Wani", "Zeenat"
+    ];
+
+    // --- APP INITIALIZATION ---
+    window.addEventListener('load', async () => {
+      initPoolGrid();
+      populateAdminColourFilter();
+
+      if (firebaseConfig) {
+        try {
+          const app = initializeApp(firebaseConfig);
+          auth = getAuth(app);
+          db = getFirestore(app);
+
+          // Auth execution
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            await signInAnonymously(auth);
+          }
+          isCloudActive = true;
+          document.getElementById('syncStatusText').innerText = "Live Cloud Sync Connected";
+          listenToFirestore();
+        } catch (err) {
+          console.warn("Firestore connection fallback to local mode:", err);
+          initLocalFallback();
+        }
+      } else {
+        initLocalFallback();
+      }
+    });
+
+    function initLocalFallback() {
+      isCloudActive = false;
+      document.getElementById('syncStatusText').innerText = "Local Session Mode (Demo)";
+      // Load or create local data
+      const stored = localStorage.getItem('potluck_participants_44');
+      if (stored) {
+        participants = JSON.parse(stored);
+      } else {
+        participants = DEFAULT_NAMES.map((name, index) => ({
+          id: `p_${index + 1}`,
+          name: name,
+          drawn: false,
+          assignedColour: null,
+          timestamp: null
+        }));
+        saveLocal();
+      }
+      onParticipantsUpdated();
+    }
+
+    function saveLocal() {
+      localStorage.setItem('potluck_participants_44', JSON.stringify(participants));
+      onParticipantsUpdated();
+    }
+
+    // Realtime Firestore Listener
+    function listenToFirestore() {
+      if (!db) return;
+      const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'potluck_participants');
+
+      onSnapshot(colRef, (snapshot) => {
+        if (snapshot.empty) {
+          // Initialize DB with 44 default slots
+          initializeCloudDefaults();
+        } else {
+          const loaded = [];
+          snapshot.forEach(doc => {
+            loaded.push({ id: doc.id, ...doc.data() });
+          });
+          // Sort naturally by ID or index
+          loaded.sort((a, b) => {
+            const numA = parseInt(a.id.replace('p_', '')) || 0;
+            const numB = parseInt(b.id.replace('p_', '')) || 0;
+            return numA - numB;
+          });
+          participants = loaded;
+          onParticipantsUpdated();
+        }
+      }, (err) => {
+        console.error("Snapshot error:", err);
+        showToast("Cloud sync error. Switched to local mode.", "error");
+      });
+    }
+
+    async function initializeCloudDefaults() {
+      if (!db || !auth.currentUser) return;
+      try {
+        const batch = writeBatch(db);
+        DEFAULT_NAMES.forEach((name, i) => {
+          const docId = `p_${i + 1}`;
+          const ref = doc(db, 'artifacts', appId, 'public', 'data', 'potluck_participants', docId);
+          batch.set(ref, {
+            name: name,
+            drawn: false,
+            assignedColour: null,
+            timestamp: null
+          });
+        });
+        await batch.commit();
+      } catch (e) {
+        console.error("Error creating default roster:", e);
+      }
+    }
+
+    // --- REACTION WHEN DATA CHANGES ---
+    function onParticipantsUpdated() {
+      updateDrawnCounter();
+      renderPoolGridStats();
+
+      // If user currently has a selected name, refresh their view state
+      if (selectedParticipantId) {
+        const currentP = participants.find(p => p.id === selectedParticipantId);
+        if (currentP) {
+          renderParticipantState(currentP);
+        }
+      }
+
+      if (isAdminUnlocked) {
+        renderAdminTable();
+      }
+
+      // Update bulk names textarea if not actively typing
+      const bulkInput = document.getElementById('bulkNamesInput');
+      if (document.activeElement !== bulkInput) {
+        bulkInput.value = participants.map(p => p.name).join('\n');
+        document.getElementById('parsedNameCount').innerText = participants.length;
+      }
+    }
+
+    function updateDrawnCounter() {
+      const drawnCount = participants.filter(p => p.drawn).length;
+      document.getElementById('drawnCounter').innerText = `${drawnCount}/${participants.length}`;
+    }
+
+    // --- POOL GRID RENDER ---
+    function initPoolGrid() {
+      const grid = document.getElementById('poolGrid');
+      grid.innerHTML = '';
+      CORE_COLOURS.forEach(c => {
+        const card = document.createElement('div');
+        card.id = `poolCard_${c.name.replace(/[^a-zA-Z]/g, '')}`;
+        card.className = "p-3 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col justify-between transition-all";
+        card.innerHTML = `
+          <div class="flex items-center space-x-2 mb-2">
+            <div class="w-4 h-4 rounded-full flex-shrink-0 shadow-sm" style="background-color: ${c.hex}; border: 1px solid rgba(0,0,0,0.1);"></div>
+            <span class="text-xs font-bold text-slate-800 truncate">${c.name}</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+            <span>Taken: <strong class="text-slate-900TakenCount">0</strong>/${c.maxSlots}</span>
+            <span class="statusBadge font-bold text-emerald-600">Available</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function renderPoolGridStats() {
+      // Calculate drawn counts per colour
+      const counts = {};
+      CORE_COLOURS.forEach(c => counts[c.name] = 0);
+      participants.forEach(p => {
+        if (p.drawn && p.assignedColour && counts.hasOwnProperty(p.assignedColour)) {
+          counts[p.assignedColour]++;
+        }
+      });
+
+      CORE_COLOURS.forEach(c => {
+        const cardId = `poolCard_${c.name.replace(/[^a-zA-Z]/g, '')}`;
+        const card = document.getElementById(cardId);
+        if (!card) return;
+
+        const taken = counts[c.name] || 0;
+        const remaining = c.maxSlots - taken;
+
+        const takenSpan = card.querySelector('.text-slate-900TakenCount');
+        if (takenSpan) takenSpan.innerText = taken;
+
+        const badge = card.querySelector('.statusBadge');
+        if (badge) {
+          if (remaining === 0) {
+            badge.innerText = "FULL";
+            badge.className = "statusBadge font-bold text-rose-500";
+          } else {
+            badge.innerText = `${remaining} Left`;
+            badge.className = "statusBadge font-bold text-emerald-600";
+          }
+        }
+      });
+    }
+
+    // --- PARTICIPANT SEARCH & SELECT ---
+    window.filterNames = function() {
+      const query = document.getElementById('nameSearchInput').value.toLowerCase().trim();
+      const dropdown = document.getElementById('nameDropdown');
+      const clearBtn = document.getElementById('clearNameBtn');
+
+      if (query.length > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+
+      const filtered = participants.filter(p => p.name.toLowerCase().includes(query));
+      
+      if (filtered.length === 0) {
+        dropdown.innerHTML = `<div class="p-4 text-xs text-slate-400 text-center">No matching name found</div>`;
+      } else {
+        dropdown.innerHTML = filtered.map(p => `
+          <button 
+            type="button"
+            onclick="selectParticipant('${p.id}')"
+            class="w-full px-4 py-3 text-left hover:bg-purple-50 flex items-center justify-between transition-colors text-xs font-semibold"
+          >
+            <span class="text-slate-900">${escapeHtml(p.name)}</span>
+            ${p.drawn 
+              ? `<span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full text-[10px]">Drawn: ${p.assignedColour}</span>`
+              : `<span class="text-emerald-600 font-bold text-[10px]"><i class="fas fa-circle text-[8px] mr-1"></i> Ready to Draw</span>`
+            }
+          </button>
+        `).join('');
+      }
+      dropdown.classList.remove('hidden');
+    };
+
+    window.showNameDropdown = function() {
+      filterNames();
+    };
+
+    window.selectParticipant = function(id) {
+      const p = participants.find(item => item.id === id);
+      if (!p) return;
+
+      selectedParticipantId = id;
+      document.getElementById('nameSearchInput').value = p.name;
+      document.getElementById('nameDropdown').classList.add('hidden');
+      document.getElementById('clearNameBtn').classList.remove('hidden');
+
+      renderParticipantState(p);
+    };
+
+    window.clearNameSelection = function() {
+      selectedParticipantId = null;
+      document.getElementById('nameSearchInput').value = '';
+      document.getElementById('nameDropdown').classList.add('hidden');
+      document.getElementById('clearNameBtn').classList.add('hidden');
+
+      // Hide states
+      document.getElementById('stateSelectPrompt').classList.remove('hidden');
+      document.getElementById('stateReadyToRoll').classList.add('hidden');
+      document.getElementById('stateRolling').classList.add('hidden');
+      document.getElementById('stateResult').classList.add('hidden');
+    };
+
+    function renderParticipantState(p) {
+      document.getElementById('stateSelectPrompt').classList.add('hidden');
+      document.getElementById('stateRolling').classList.add('hidden');
+
+      if (p.drawn && p.assignedColour) {
+        // Show Drawn Result Immediately
+        document.getElementById('stateReadyToRoll').classList.add('hidden');
+        document.getElementById('stateResult').classList.remove('hidden');
+
+        const colourObj = CORE_COLOURS.find(c => c.name === p.assignedColour) || {
+          name: p.assignedColour,
+          hex: "#6B7280",
+          icon: "fa-utensils",
+          suggestions: "Bring any dish matching this shade!"
+        };
+
+        document.getElementById('resultBadgeText').innerText = `Locked in for ${p.name}`;
+        document.getElementById('resultColourTitle').innerText = colourObj.name.toUpperCase();
+        
+        const resultBox = document.getElementById('resultColourBox');
+        resultBox.style.backgroundColor = colourObj.hex;
+        resultBox.className = `w-full h-36 rounded-2xl flex flex-col items-center justify-center p-4 transition-all shadow-inner ${colourObj.textDark ? 'text-slate-900' : 'text-white'}`;
+        
+        document.getElementById('resultIcon').className = `fas ${colourObj.icon || 'fa-utensils'} text-4xl mb-2 drop-shadow-md`;
+        document.getElementById('resultHexTag').innerText = colourObj.hex;
+        document.getElementById('resultSuggestions').innerText = colourObj.suggestions;
+
+      } else {
+        // Ready to Roll State
+        document.getElementById('stateResult').classList.add('hidden');
+        document.getElementById('stateReadyToRoll').classList.remove('hidden');
+        document.getElementById('selectedUserHeader').innerText = `Hello, ${p.name}!`;
+      }
+    }
+
+    // --- DRAW EXECUTION LOGIC ---
+    window.executeDraw = async function() {
+      if (!selectedParticipantId || isDrawingInProgress) return;
+
+      const p = participants.find(item => item.id === selectedParticipantId);
+      if (!p) return;
+
+      if (p.drawn) {
+        showToast(`${p.name} has already drawn a colour!`, "info");
+        return;
+      }
+
+      // 1. Calculate remaining available slots
+      const counts = {};
+      CORE_COLOURS.forEach(c => counts[c.name] = 0);
+      participants.forEach(item => {
+        if (item.drawn && item.assignedColour && counts.hasOwnProperty(item.assignedColour)) {
+          counts[item.assignedColour]++;
+        }
+      });
+
+      const availableColours = CORE_COLOURS.filter(c => counts[c.name] < c.maxSlots);
+
+      if (availableColours.length === 0) {
+        showToast("All 44 colour slots have already been claimed!", "error");
+        return;
+      }
+
+      // 2. Start Animation State
+      isDrawingInProgress = true;
+      document.getElementById('stateReadyToRoll').classList.add('hidden');
+      document.getElementById('stateRolling').classList.remove('hidden');
+
+      const rollingDisplay = document.getElementById('rollingDisplay');
+      
+      // Shuffle animation loop for 2.5 seconds
+      let shuffleInterval = setInterval(() => {
+        const tempColour = availableColours[Math.floor(Math.random() * availableColours.length)];
+        rollingDisplay.style.backgroundColor = tempColour.hex;
+        rollingDisplay.className = `w-40 h-40 rounded-full mx-auto flex flex-col items-center justify-center font-display font-extrabold text-xl shadow-2xl transition-all ${tempColour.textDark ? 'text-slate-900' : 'text-white'}`;
+        rollingDisplay.innerHTML = `
+          <i class="fas ${tempColour.icon} text-3xl mb-1 animate-spin"></i>
+          <span>${tempColour.name}</span>
+        `;
+      }, 100);
+
+      setTimeout(async () => {
+        clearInterval(shuffleInterval);
+
+        // Pick final random colour
+        const pickedColour = availableColours[Math.floor(Math.random() * availableColours.length)];
+        const timestamp = Date.now();
+
+        // Save state to Cloud or Local
+        try {
+          if (isCloudActive && db && auth.currentUser) {
+            const pRef = doc(db, 'artifacts', appId, 'public', 'data', 'potluck_participants', p.id);
+            await setDoc(pRef, {
+              name: p.name,
+              drawn: true,
+              assignedColour: pickedColour.name,
+              timestamp: timestamp
+            }, { merge: true });
+          } else {
+            p.drawn = true;
+            p.assignedColour = pickedColour.name;
+            p.timestamp = timestamp;
+            saveLocal();
+          }
+
+          isDrawingInProgress = false;
+
+          // Fire Confetti
+          if (typeof confetti === 'function') {
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 }
+            });
+          }
+
+          showToast(`Successfully drawn: ${pickedColour.name}!`, "success");
+
+        } catch (err) {
+          console.error("Error saving draw:", err);
+          isDrawingInProgress = false;
+          showToast("Failed to lock in draw. Please try again.", "error");
+          document.getElementById('stateRolling').classList.add('hidden');
+          document.getElementById('stateReadyToRoll').classList.remove('hidden');
+        }
+
+      }, 2500);
+    };
+
+    // --- SHARE HELPER ---
+    window.copyParticipantShareText = function() {
+      if (!selectedParticipantId) return;
+      const p = participants.find(item => item.id === selectedParticipantId);
+      if (!p || !p.assignedColour) return;
+
+      const colourObj = CORE_COLOURS.find(c => c.name === p.assignedColour);
+      const text = `🎨 Colour-Coded Potluck! 🍱\n\nName: ${p.name}\nAssigned Colour: ${p.assignedColour}\nDish Ideas: ${colourObj ? colourObj.suggestions : ''}\n\nSee you at the party! 🎉`;
+
+      copyToClipboard(text, "Colour details copied to clipboard!");
+    };
+
+    // --- ADMIN PANEL FUNCTIONS ---
+    window.switchTab = function(tab) {
+      const drawBtn = document.getElementById('navDrawBtn');
+      const adminBtn = document.getElementById('navAdminBtn');
+      const drawView = document.getElementById('participantView');
+      const adminView = document.getElementById('adminView');
+
+      if (tab === 'draw') {
+        drawBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-purple-700 shadow-sm";
+        adminBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900";
+        drawView.classList.remove('hidden');
+        adminView.classList.add('hidden');
+      } else {
+        adminBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-purple-700 shadow-sm";
+        drawBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-600 hover:text-slate-900";
+        adminView.classList.remove('hidden');
+        drawView.classList.add('hidden');
+      }
+    };
+
+    window.handlePinSubmit = function(e) {
+      e.preventDefault();
+      const pin = document.getElementById('adminPinInput').value;
+      if (pin === adminPin) {
+        isAdminUnlocked = true;
+        document.getElementById('adminPinCard').classList.add('hidden');
+        document.getElementById('adminPanelContent').classList.remove('hidden');
+        renderAdminTable();
+        showToast("Organizer Admin Unlocked!", "success");
+      } else {
+        showToast("Incorrect PIN. Please try default '1234'.", "error");
+      }
+    };
+
+    window.lockAdmin = function() {
+      isAdminUnlocked = false;
+      document.getElementById('adminPinInput').value = '';
+      document.getElementById('adminPinCard').classList.remove('hidden');
+      document.getElementById('adminPanelContent').classList.add('hidden');
+      showToast("Admin Panel Locked", "info");
+    };
+
+    function populateAdminColourFilter() {
+      const select = document.getElementById('adminColourFilter');
+      CORE_COLOURS.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.innerText = c.name;
+        select.appendChild(opt);
+      });
+    }
+
+    window.renderAdminTable = function() {
+      if (!isAdminUnlocked) return;
+
+      const search = document.getElementById('adminSearchInput').value.toLowerCase();
+      const statusFilter = document.getElementById('adminStatusFilter').value;
+      const colourFilter = document.getElementById('adminColourFilter').value;
+
+      let filtered = participants.filter(p => {
+        const matchSearch = p.name.toLowerCase().includes(search);
+        const matchStatus = statusFilter === 'all' 
+          ? true 
+          : (statusFilter === 'drawn' ? p.drawn : !p.drawn);
+        const matchColour = colourFilter === 'all'
+          ? true
+          : (p.assignedColour === colourFilter);
+        return matchSearch && matchStatus && matchColour;
+      });
+
+      const tbody = document.getElementById('adminTableBody');
+      document.getElementById('tableRowSummary').innerText = `Showing ${filtered.length} of ${participants.length} participants`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400">No participants match filters</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((p, idx) => {
+        const colourObj = CORE_COLOURS.find(c => c.name === p.assignedColour);
+        const timeStr = p.timestamp ? new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+
+        return `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="py-3 px-4 font-mono text-slate-400">${idx + 1}</td>
+            <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(p.name)}</td>
+            <td class="py-3 px-4">
+              ${p.drawn 
+                ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800"><i class="fas fa-check-circle mr-1"></i> Drawn</span>`
+                : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800"><i class="fas fa-clock mr-1"></i> Pending</span>`
+              }
+            </td>
+            <td class="py-3 px-4">
+              ${p.assignedColour && colourObj 
+                ? `<div class="flex items-center space-x-2">
+                    <span class="w-3.5 h-3.5 rounded-full inline-block border border-black/10 shadow-sm" style="background-color: ${colourObj.hex};"></span>
+                    <span class="font-bold text-slate-800">${p.assignedColour}</span>
+                   </div>`
+                : `<span class="text-slate-400">-</span>`
+              }
+            </td>
+            <td class="py-3 px-4 text-slate-500 font-mono text-[11px]">${timeStr}</td>
+            <td class="py-3 px-4 text-right space-x-1">
+              ${p.drawn 
+                ? `<button onclick="confirmResetParticipant('${p.id}')" title="Reset this participant's draw" class="px-2.5 py-1 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold">
+                    <i class="fas fa-undo"></i> Reset
+                   </button>`
+                : `<span class="text-slate-300 text-[10px]">No action</span>`
+              }
+            </td>
+          </tr>
+        `;
+      }).join('');
+    };
+
+    // --- ROSTER BULK MANAGEMENT ---
+    window.toggleRosterEditor = function() {
+      const body = document.getElementById('rosterEditorBody');
+      const text = document.getElementById('rosterToggleText');
+      if (body.classList.contains('hidden')) {
+        body.classList.remove('hidden');
+        text.innerText = "Hide Editor";
+      } else {
+        body.classList.add('hidden');
+        text.innerText = "Show Editor";
+      }
+    };
+
+    window.loadSampleNames = function() {
+      document.getElementById('bulkNamesInput').value = DEFAULT_NAMES.join('\n');
+      document.getElementById('parsedNameCount').innerText = 44;
+    };
+
+    window.saveRosterFromBulk = async function() {
+      const raw = document.getElementById('bulkNamesInput').value;
+      const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+      if (lines.length === 0) {
+        showToast("Please enter at least 1 participant name.", "error");
+        return;
+      }
+
+      openModal({
+        title: "Update Roster?",
+        body: `This will update the roster to ${lines.length} names. Existing draw assignments for matching position slots will be preserved. Continue?`,
+        icon: "fa-users",
+        confirmText: "Update Roster",
+        onConfirm: async () => {
+          try {
+            if (isCloudActive && db && auth.currentUser) {
+              const batch = writeBatch(db);
+              lines.forEach((name, i) => {
+                const docId = `p_${i + 1}`;
+                const existing = participants.find(p => p.id === docId);
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'potluck_participants', docId);
+                
+                batch.set(ref, {
+                  name: name,
+                  drawn: existing ? existing.drawn : false,
+                  assignedColour: existing ? existing.assignedColour : null,
+                  timestamp: existing ? existing.timestamp : null
+                }, { merge: true });
+              });
+              await batch.commit();
+            } else {
+              participants = lines.map((name, i) => {
+                const docId = `p_${i + 1}`;
+                const existing = participants.find(p => p.id === docId);
+                return {
+                  id: docId,
+                  name: name,
+                  drawn: existing ? existing.drawn : false,
+                  assignedColour: existing ? existing.assignedColour : null,
+                  timestamp: existing ? existing.timestamp : null
+                };
+              });
+              saveLocal();
+            }
+            showToast("Roster updated successfully!", "success");
+          } catch (e) {
+            console.error(e);
+            showToast("Failed to update roster in cloud.", "error");
+          }
+        }
+      });
+    };
+
+    // --- RESET ACTIONS ---
+    window.confirmResetParticipant = function(id) {
+      const p = participants.find(item => item.id === id);
+      if (!p) return;
+
+      openModal({
+        title: `Reset ${p.name}?`,
+        body: `This will reset ${p.name}'s assigned colour (${p.assignedColour}) so they can re-roll.`,
+        icon: "fa-undo",
+        confirmText: "Reset Draw",
+        onConfirm: async () => {
+          try {
+            if (isCloudActive && db && auth.currentUser) {
+              const pRef = doc(db, 'artifacts', appId, 'public', 'data', 'potluck_participants', p.id);
+              await setDoc(pRef, {
+                drawn: false,
+                assignedColour: null,
+                timestamp: null
+              }, { merge: true });
+            } else {
+              p.drawn = false;
+              p.assignedColour = null;
+              p.timestamp = null;
+              saveLocal();
+            }
+            showToast(`Reset draw for ${p.name}.`, "success");
+          } catch (e) {
+            showToast("Error resetting participant.", "error");
+          }
+        }
+      });
+    };
+
+    window.confirmResetAll = function() {
+      openModal({
+        title: "Reset ALL 44 Draws?",
+        body: "WARNING: This will clear all assigned potluck colours for all participants. Participant names will be kept.",
+        icon: "fa-exclamation-triangle",
+        confirmText: "Reset All",
+        onConfirm: async () => {
+          try {
+            if (isCloudActive && db && auth.currentUser) {
+              const batch = writeBatch(db);
+              participants.forEach(p => {
+                const pRef = doc(db, 'artifacts', appId, 'public', 'data', 'potluck_participants', p.id);
+                batch.set(pRef, {
+                  drawn: false,
+                  assignedColour: null,
+                  timestamp: null
+                }, { merge: true });
+              });
+              await batch.commit();
+            } else {
+              participants.forEach(p => {
+                p.drawn = false;
+                p.assignedColour = null;
+                p.timestamp = null;
+              });
+              saveLocal();
+            }
+            showToast("All draws have been reset!", "success");
+          } catch (e) {
+            showToast("Error resetting all draws.", "error");
+          }
+        }
+      });
+    };
+
+    // --- EXPORTS SUMMARY ---
+    window.copyWhatsAppSummary = function() {
+      let text = `🎨 *COLOUR-CODED POTLUCK SUMMARY* 🍱\n\n`;
+      
+      CORE_COLOURS.forEach(c => {
+        const assigned = participants.filter(p => p.drawn && p.assignedColour === c.name);
+        text += `*${c.name.toUpperCase()}* (${assigned.length}/${c.maxSlots}):\n`;
+        if (assigned.length === 0) {
+          text += `  _No participants yet_\n`;
+        } else {
+          assigned.forEach(p => {
+            text += `  • ${p.name}\n`;
+          });
+        }
+        text += `  💡 _Ideas: ${c.suggestions}_\n\n`;
+      });
+
+      const pending = participants.filter(p => !p.drawn);
+      if (pending.length > 0) {
+        text += `⏳ *Pending Draws (${pending.length}):*\n`;
+        text += pending.map(p => p.name).join(', ') + `\n\n`;
+      }
+
+      text += `Draw online here! 🎉`;
+
+      copyToClipboard(text, "WhatsApp summary copied to clipboard!");
+    };
+
+    window.exportCSV = function() {
+      let csv = "ID,Name,Status,Assigned Colour,Timestamp\n";
+      participants.forEach(p => {
+        const timeStr = p.timestamp ? new Date(p.timestamp).toISOString() : "";
+        csv += `"${p.id}","${p.name}","${p.drawn ? 'Drawn' : 'Pending'}","${p.assignedColour || ''}","${timeStr}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `potluck_colour_draws_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast("Downloaded CSV summary!", "success");
+    };
+
+    // --- UI UTILS & MODALS ---
+    window.togglePoolDetails = function() {
+      const grid = document.getElementById('poolGrid');
+      const text = document.getElementById('poolToggleText');
+      if (grid.classList.contains('hidden')) {
+        grid.classList.remove('hidden');
+        text.innerText = "Hide Details";
+      } else {
+        grid.classList.add('hidden');
+        text.innerText = "Show Details";
+      }
+    };
+
+    function showToast(msg, type = "info") {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toastIcon');
+      const message = document.getElementById('toastMessage');
+
+      message.innerText = msg;
+      if (type === "success") {
+        icon.className = "w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0";
+        icon.innerHTML = `<i class="fas fa-check font-bold"></i>`;
+      } else if (type === "error") {
+        icon.className = "w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center flex-shrink-0";
+        icon.innerHTML = `<i class="fas fa-exclamation font-bold"></i>`;
+      } else {
+        icon.className = "w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center flex-shrink-0";
+        icon.innerHTML = `<i class="fas fa-info font-bold"></i>`;
+      }
+
+      toast.classList.remove('translate-y-[-150%]');
+      setTimeout(() => {
+        hideToast();
+      }, 3500);
+    }
+
+    window.hideToast = function() {
+      document.getElementById('toast').classList.add('translate-y-[-150%]');
+    };
+
+    function copyToClipboard(text, toastMsg) {
+      const tempArea = document.createElement("textarea");
+      tempArea.value = text;
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      try {
+        document.execCommand('copy');
+        showToast(toastMsg, "success");
+      } catch (err) {
+        showToast("Failed to copy text.", "error");
+      }
+      document.body.removeChild(tempArea);
+    }
+
+    let modalConfirmCallback = null;
+    function openModal({ title, body, icon, confirmText, onConfirm }) {
+      document.getElementById('modalTitle').innerText = title;
+      document.getElementById('modalBody').innerText = body;
+      document.getElementById('modalConfirmBtn').innerText = confirmText || "Confirm";
+      document.getElementById('modalIconContainer').innerHTML = `<i class="fas ${icon || 'fa-question-circle'}"></i>`;
+      
+      modalConfirmCallback = onConfirm;
+      document.getElementById('customModal').classList.remove('hidden');
+    }
+
+    window.closeModal = function() {
+      document.getElementById('customModal').classList.add('hidden');
+      modalConfirmCallback = null;
+    };
+
+    document.getElementById('modalConfirmBtn').addEventListener('click', () => {
+      if (modalConfirmCallback) modalConfirmCallback();
+      closeModal();
+    });
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+  </script>
+</body>
+</html>
